@@ -1,0 +1,10 @@
+*.Rhistory
+*.Rproj.user/
+IMUNIC.Rproj
+*.DS_Store
+*.RData
+*.hash
+data/*.csv
+.Rproj.user
+.httr-oauth
+data/
