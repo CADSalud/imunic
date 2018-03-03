@@ -46,18 +46,27 @@ names(envipe_vic2_year_l) <- 2014:2017
 envipe_vic2_year_l[[1]] %>% head
 envipe_vic2_year_l[[1]] %>% dim
 
-cache("envipe_vic1_year_l")
-cache("envipe_vic2_year_l")
 
 
 # to csv ----
 
 
-envipe_vic1_year_l$`2014` %>% 
+envipe_vic1_year_l$`2015` %>% 
   mutate_all(as.character) %>% 
-  mutate(AREAM = fct_explicit_na(AREAM, "NA")) %>% 
-  write_csv("data/tper_vic1_2014.csv")
+  mutate(AREAM = ifelse(is.na(AREAM), "999", AREAM), 
+         FAC_HOG_AM = ifelse(is.na(FAC_HOG_AM), "0", FAC_HOG_AM),
+         FAC_ELE_AM = ifelse(is.na(FAC_ELE_AM), "0", FAC_ELE_AM)
+  ) %>% 
+  write_csv("data/tper_vic1_2015.csv")
 
-envipe_vic2_year_l$`2017` %>% 
+
+tt <- envipe_vic2_year_l$`2014`
+tt$FAC_ELE_AM %>% summary()
+envipe_vic2_year_l$`2014` %>%
+  mutate(AREAM = ifelse(is.na(AREAM), "999", AREAM), 
+         FAC_HOG_AM = ifelse(is.na(FAC_HOG_AM), "0", FAC_HOG_AM),
+         FAC_VIV_AM = ifelse(is.na(FAC_VIV_AM), "0", FAC_VIV_AM),
+         FAC_ELE_AM = ifelse(is.na(FAC_ELE_AM), "0", FAC_ELE_AM)
+         ) %>% 
   mutate_all(as.character) %>% 
-  write_csv("data/tper_vic2_2017.csv")
+  write_csv("data/tper_vic2_2014.csv")
