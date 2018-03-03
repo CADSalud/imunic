@@ -8,7 +8,7 @@ munging: F
 logging: FALSE
 logging_level: INFO
 load_libraries: TRUE
-libraries: reshape2, tidyverse, stringr, lubridate
+libraries: tidyverse, stringr, lubridate, bigrquery
 as_factors: TRUE
 data_tables: FALSE
 attach_internal_libraries: FALSE
