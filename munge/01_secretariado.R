@@ -11,9 +11,8 @@ library(lubridate)
 # 10,219,968
 fcomun_mun <- read_csv("data/vieja_metodologia/fuero-comun-municipios.csv") %>% 
   mutate(date = ymd(paste0(date, "-01")) )
-cache("fcomun_mun")
 
-# 2. Fuero federal: ----
+m# 2. Fuero federal: ----
 
 # # b) secretariado
 # incdel_ffed <- readxl::read_excel("data/secretariado_estatal/Datos_abiertos_Incidencia_delictiva_Fuero_federal.xls")
@@ -48,7 +47,6 @@ victimas$modalidad %>% unique()
 # 6,812,568
 fcomun_mun_nm <- read_csv("data/nueva_metodologia/nm-fuero-comun-municipios.csv") %>% 
   mutate(date = ymd(paste0(date, "-01")) )
-cache("fcomun_mun_nm")
 
 
 fcomun_mun_nm$bien_juridico %>% unique()
@@ -71,17 +69,43 @@ fcomun_mun %>%
   unite(estado, state_code, state, sep = " ") %>% 
   write.csv(row.names = F)
 
+
+
 fcomun_mun$date %>% summary()
-year.num <- 2013
+year.num <- 2011
 fcomun_mun %>% 
-  filter(year(date) == year.num) %>% 
-  write_csv(paste0("data/vm_fuero-comun-municipios",year.num,".csv"))
+  filter(year(date) == year.num) %>% dim
+  # write_csv(paste0("data/vm_fuero-comun-municipios",year.num,".csv"))
+
+# 2011: 1,092,960
+# 2012: 1,117,512
+# 2013: 1,117,512
+# 2014: 1,500,048
+# 2015: 1,500,048
+# 2016: 1,945,944
+# 2017: 1,945,944
+
 
 fcomun_mun_nm$date %>% summary()
-year.num <- 2015
+year.num <- 2017
 fcomun_mun_nm %>% 
-  filter(year(date) == year.num) %>% 
-  write_csv(paste0("data/nm_fuero-comun-municipios",year.num,".csv"))
+  filter(year(date) == year.num) %>% dim
+  # write_csv(paste0("data/nm_fuero-comun-municipios",year.num,".csv"))
+
+
+# 2015: 2,270,856
+# 2016: 2,270,856
+# 2017: 2,270,856
+
+library(bigrquery)
+
+query_exec("SELECT count(state_code) FROM [imunic-196018:secretariado.nm_fuerocomun_municipios2017]", 
+           project = "imunic-196018")
+
+query_exec("SELECT * FROM [imunic-196018:secretariado.nm_fuerocomun_municipios2017] LIMIT 3",
+           project = "imunic-196018")
+
+
 
 
 # tab_pob <- fcomun_mun %>% 
@@ -93,3 +117,4 @@ fcomun_mun_nm %>%
 # 
 # tab_pob %>% 
 #   write.csv("../../cursos_r/intro_tidyverse/data/poblacion_municipal.csv", row.names = F)
+

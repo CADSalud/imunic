@@ -51,22 +51,38 @@ envipe_vic2_year_l[[1]] %>% dim
 # to csv ----
 
 
-envipe_vic1_year_l$`2015` %>% 
+envipe_vic1_year_l$`2014` %>% 
   mutate_all(as.character) %>% 
   mutate(AREAM = ifelse(is.na(AREAM), "999", AREAM), 
          FAC_HOG_AM = ifelse(is.na(FAC_HOG_AM), "0", FAC_HOG_AM),
          FAC_ELE_AM = ifelse(is.na(FAC_ELE_AM), "0", FAC_ELE_AM)
-  ) %>% 
-  write_csv("data/tper_vic1_2015.csv")
-
+  ) %>% dim
+  # write_csv("data/tper_vic1_2015.csv")
 
 tt <- envipe_vic2_year_l$`2014`
 tt$FAC_ELE_AM %>% summary()
-envipe_vic2_year_l$`2014` %>%
+
+envipe_vic2_year_l$`2017` %>%
   mutate(AREAM = ifelse(is.na(AREAM), "999", AREAM), 
          FAC_HOG_AM = ifelse(is.na(FAC_HOG_AM), "0", FAC_HOG_AM),
          FAC_VIV_AM = ifelse(is.na(FAC_VIV_AM), "0", FAC_VIV_AM),
          FAC_ELE_AM = ifelse(is.na(FAC_ELE_AM), "0", FAC_ELE_AM)
          ) %>% 
-  mutate_all(as.character) %>% 
-  write_csv("data/tper_vic2_2014.csv")
+  mutate_all(as.character) %>% dim
+  # write_csv("data/tper_vic2_2014.csv")
+
+
+# 2014: 84629
+# 2015: 84507
+# 2016: 85744
+# 2017: 92551
+
+library(bigrquery)
+project <- "imunic-196018"
+
+sql <- "SELECT * FROM [imunic-196018:envipe.tper_vic2_2016] LIMIT 5"
+query_exec(sql, project = project)
+query_exec(query = "SELECT count(ID_VIV) FROM [imunic-196018:envipe.tper_vic2_2017]", 
+           project = project)
+
+
