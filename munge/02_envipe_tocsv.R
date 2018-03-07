@@ -48,9 +48,51 @@ envipe_vic2_year_l[[1]] %>% dim
 
 
 
+# 2014 a 2017 demos
+envipe_sdem_year_l <- lapply(2014:2017, function(year_num){
+  path <- paste0("data/envipe/bd_envipe", year_num,
+                 "_dbf/TSDEM.dbf")
+  print(path)
+  read.dbf(file = path) %>% 
+    as.tibble() %>% 
+    mutate(year_file = year_num)
+})
+names(envipe_sdem_year_l) <- 2014:2017
+envipe_sdem_year_l[[1]] %>% head
+envipe_sdem_year_l[[1]] %>% dim
+
+
+# 2014 a 2017 vivienda
+envipe_tviv_year_l <- lapply(2014:2017, function(year_num){
+  path <- paste0("data/envipe/bd_envipe", year_num,
+                 "_dbf/TVivienda.dbf")
+  print(path)
+  read.dbf(file = path) %>% 
+    as.tibble() %>% 
+    mutate(year_file = year_num)
+})
+names(envipe_tviv_year_l) <- 2014:2017
+envipe_tviv_year_l[[1]] %>% head
+envipe_tviv_year_l[[1]] %>% dim
+
+
+# 2014 a 2017 hogar
+envipe_thog_year_l <- lapply(2014:2017, function(year_num){
+  path <- paste0("data/envipe/bd_envipe", year_num,
+                 "_dbf/THogar.dbf")
+  print(path)
+  read.dbf(file = path) %>% 
+    as.tibble() %>% 
+    mutate(year_file = year_num)
+})
+names(envipe_thog_year_l) <- 2014:2017
+envipe_thog_year_l[[1]] %>% head
+envipe_tviv_year_l[[1]] %>% dim
+
+
+
+
 # to csv ----
-
-
 envipe_vic1_year_l$`2014` %>% 
   mutate_all(as.character) %>% 
   mutate(AREAM = ifelse(is.na(AREAM), "999", AREAM), 
@@ -70,6 +112,24 @@ envipe_vic2_year_l$`2017` %>%
          ) %>% 
   mutate_all(as.character) %>% dim
   # write_csv("data/tper_vic2_2014.csv")
+
+
+envipe_tviv_year_l$`2017` %>%
+  mutate(AREAM = ifelse(is.na(AREAM), "999", AREAM),
+         FAC_VIV_AM = ifelse(is.na(FAC_VIV_AM), "0", FAC_VIV_AM)
+         ) %>%
+  mutate_all(as.character) %>% #dim
+  write_csv("data/tvivienda_2017.csv")
+
+
+
+envipe_sdem_year_l$`2017` %>%
+  mutate(#AREAM = ifelse(is.na(AREAM), "999", AREAM), 
+         FAC_HOG_AM = ifelse(is.na(FAC_HOG_AM), "0", FAC_HOG_AM)
+         ) %>%
+  mutate_all(as.character) %>% #dim
+  write_csv("data/tsdem_2017.csv")
+
 
 
 # 2014: 84629
