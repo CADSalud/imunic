@@ -1,0 +1,55 @@
+Tema,Descripción,2013,2014,2015,2016
+importancia,Pobreza,AP4_2_01,AP4_2_01,AP4_2_01,AP4_2_01
+importancia,Desempleo,AP4_2_02,AP4_2_02,AP4_2_02,AP4_2_02
+importancia,Narco,AP4_2_03,AP4_2_03,AP4_2_03,AP4_2_03
+importancia,Precios,AP4_2_04,AP4_2_04,AP4_2_04,AP4_2_04
+importancia,Inseguridad,AP4_2_05,AP4_2_05,AP4_2_05,AP4_2_05
+importancia,Desastres,AP4_2_06,AP4_2_06,AP4_2_06,AP4_2_06
+importancia,Agua,AP4_2_07,AP4_2_07,AP4_2_07,AP4_2_07
+importancia,Corrupción,AP4_2_08,AP4_2_08,AP4_2_08,AP4_2_08
+importancia,Educación,AP4_2_09,AP4_2_09,AP4_2_09,AP4_2_09
+importancia,Salud,AP4_2_10,AP4_2_10,AP4_2_10,AP4_2_10
+importancia,Impunidad,AP4_2_11,AP4_2_11,AP4_2_11,AP4_2_11
+importancia,Otro ,AP4_2_12,AP4_2_12,AP4_2_12,AP4_2_12
+importancia,No sabe,AP4_2_99,AP4_2_99,AP4_2_99,AP4_2_99
+inseguridad,Inseguridad en mun,AP4_3_2,AP4_3_2,AP4_3_2,AP4_3_2
+percepción,alcohol en la calle,AP4_5_01,AP4_5_01,AP4_5_01,AP4_5_01
+percepción,pandillerismo,AP4_5_02,AP4_5_02,AP4_5_02,AP4_5_02
+percepción,riñas entre vecinos,AP4_5_03,AP4_5_03,AP4_5_03,AP4_5_03
+percepción,venta ilegal alcohol,AP4_5_04,AP4_5_04,AP4_5_04,AP4_5_04
+percepción,venta prods pirata,AP4_5_05,AP4_5_05,AP4_5_05,AP4_5_05
+percepción,policia vs ciudadanos,AP4_5_06,AP4_5_06,AP4_5_06,AP4_5_06
+percepción,invasión de predios,AP4_5_07,AP4_5_07,AP4_5_07,AP4_5_07
+percepción,consumo drogas,AP4_5_08,AP4_5_08,AP4_5_08,AP4_5_08
+percepción,robos asaltos,AP4_5_09,AP4_5_09,AP4_5_09,AP4_5_09
+percepción,venta droga,AP4_5_10,AP4_5_10,AP4_5_10,AP4_5_10
+percepción,disparos,AP4_5_11,AP4_5_11,AP4_5_11,AP4_5_11
+percepción,prostitución,AP4_5_12,AP4_5_12,AP4_5_12,AP4_5_12
+percepción,secuestros,AP4_5_13,AP4_5_13,AP4_5_13,AP4_5_13
+percepción,homicidios,AP4_5_14,AP4_5_14,AP4_5_14,AP4_5_14
+percepción,extorsiones,AP4_5_15,AP4_5_15,AP4_5_15,AP4_5_15
+percepción,ninguna,AP4_5_16,AP4_5_16,AP4_5_16,AP4_5_16
+percepción,no sabe,AP4_5_99,AP4_5_99,AP4_5_99,AP4_5_99
+problemas,falta alumbrado,AP4_8_1,AP4_8_1,AP4_8_1,AP4_8_1
+problemas,falta agua,AP4_8_2,AP4_8_2,AP4_8_2,AP4_8_2
+problemas,baches o fugas de agua,AP4_8_3,AP4_8_3,AP4_8_3,AP4_8_3
+problemas,pandillerismo violento,AP4_8_4,AP4_8_4,AP4_8_4,AP4_8_4
+problemas,robos,AP4_8_5,AP4_8_5,AP4_8_5,AP4_8_5
+problemas,delincuencia cerca escuelas,AP4_8_6,AP4_8_6,AP4_8_6,AP4_8_6
+víctima hogar,Secuestro sí,AP6_10_1,AP6_10_1,AP6_10_1,AP6_10_1
+víctima hogar,Secuestro num,AP6_10_2,AP6_10_2,AP6_10_2,AP6_10_2
+víctima hogar,Desparición sí,AP6_14_1,AP6_15_1,AP6_15_1,AP6_15_1
+víctima hogar,Desparición num,AP6_14_2,AP6_15_2,AP6_15_2,AP6_15_2
+víctima hogar,Homicidio sí,AP6_19_1,AP6_20_1,AP6_20_1,AP6_20_1
+víctima hogar,Homicidio num,AP6_19_2,AP6_20_2,AP6_20_2,AP6_20_2
+víctima persona,robo calle,AP7_3_05,AP7_3_05,AP7_3_05,AP7_3_05
+víctima persona,robo otro,AP7_3_06,AP7_3_06,AP7_3_06,AP7_3_06
+víctima persona,fraude bancario,AP7_3_07,AP7_3_07,AP7_3_07,AP7_3_07
+víctima persona,fraude consumidor,AP7_3_08,AP7_3_08,AP7_3_08,AP7_3_08
+víctima persona,extorsión,AP7_3_09,AP7_3_09,AP7_3_09,AP7_3_09
+víctima persona,amenazas,AP7_3_10,AP7_3_10,AP7_3_10,AP7_3_10
+víctima persona,agresión física,AP7_3_11,AP7_3_11,AP7_3_11,AP7_3_11
+víctima persona,secuestro,AP7_3_12,AP7_3_12,AP7_3_12,AP7_3_12
+víctima persona,abuso sexual,AP7_3_13,AP7_3_13,AP7_3_13,AP7_3_13
+víctima persona,violación sexual,AP7_3_14,AP7_3_14,AP7_3_14,AP7_3_14
+víctima persona,otros,AP7_3_15,AP7_3_15,AP7_3_15,AP7_3_15
