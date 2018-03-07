@@ -42,6 +42,7 @@ tab_secre <- tab_secre_l %>%
   mutate(tipo = fct_recode(tipo, 
                            `C/S VIOLENCIA` = 'CON VIOLENCIA',
                            `C/S VIOLENCIA` = 'SIN VIOLENCIA') ) %>% 
+  filter(tipo != "CULPOSOS") %>% 
   group_by(state_code, mun_code, modalidad, tipo) %>% 
   summarise(total = sum(count, na.rm = T))
 tab_secre
