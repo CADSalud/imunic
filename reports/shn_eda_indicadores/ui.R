@@ -12,20 +12,19 @@ library(shiny)
 # Define UI for application that draws a histogram
 shinyUI(fluidPage(
   
-  # Application title
   
   # Application title
   br(),
   div(style="text-align:center",
       img(src="logo-CAD.png", width="100") ),
-  br(),
+  hr(),
   
   
   titlePanel("Indicadores por Municipio"),
   h3("Visualización nacional."),
   
   br(),
-  h4("Selecciona un el nivel de visualización."),
+  h4("Selecciona un nivel de visualización."),
   
   wellPanel(fixedRow(column(5, selectInput(inputId = "estado.input", 
                         label = "Estado",
@@ -245,14 +244,6 @@ shinyUI(fluidPage(
     
   ) # tabset panel
   
-  # 
-  # # footer----
-  # br(),
-  # HTML('<p style="text-align:center">
-  #      <b> Creado por </b>
-  #      <br>
-  #      <img src="logo-CAD.png", width="90", height="35">
-  #      </p>')
   
 )
 )
