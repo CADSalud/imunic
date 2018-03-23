@@ -11,12 +11,11 @@ library(shiny)
 library(tidyverse)
 library(mxmaps)
 library(RColorBrewer)
-library(plotly)
 
-# load("../../cache/tab_delitos_urec.RData")
-load("../../cache/tab_union_indicadores.RData")
-load("../../cache/tab_indic_intercensal.RData")
-load("../../cache/tab_cods_estmun.RData")
+
+load("datos/tab_union_indicadores.RData")
+load("datos/tab_indic_intercensal.RData")
+load("datos/tab_cods_estmun.RData")
 theme_set(theme_minimal(base_size = 16))
 
 tab_cods_estmun %>% 
