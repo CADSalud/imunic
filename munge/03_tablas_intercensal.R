@@ -188,19 +188,28 @@ inds_list$`pob_municipio` <- tab %>%
   gather(indicadores, valor, -c(ENT, MUN, COBERTURA))
 inds_list$`pob_municipio`
 
-# guardar
+
+# Acta de nacimiento ----
+tab <- query_exec("SELECT ENT, MUN, COBERTURA, ACTA_NAC, sum(FACTOR), count(FACTOR) FROM [imunic-196018:intercensal.persona_append]  GROUP BY ENT, MUN, COBERTURA, ACTA_NAC",
+                  project = "imunic-196018") %>% 
+  as_tibble() %>% 
+  rename(n_facexp = f0_,
+         n = f1_) 
+
+inds_list$`pob_actanacim` <- tab %>% 
+  filter(ACTA_NAC == 1) %>% 
+  dplyr::select(ENT:COBERTURA, pob_actanacim = n_facexp) %>% 
+  gather(indicadores, valor, -c(ENT, MUN, COBERTURA))
+inds_list$`pob_actanacim`
+
+
+
+
+
+# guardar ----
 names(inds_list)
 cache("inds_list")
 
 sapply(inds_list, dim)
 
 
-tab_indic_intercensal <- inds_list %>% 
-  bind_rows() %>% 
-  spread(indicadores, valor)
-tab_indic_intercensal
-
-summary(tab_indic_intercensal)
-
-tab_indic_intercensal %>% 
-  filter(COBERTURA == 3)
