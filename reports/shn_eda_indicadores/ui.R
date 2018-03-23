@@ -13,9 +13,19 @@ library(shiny)
 shinyUI(fluidPage(
   
   # Application title
-  titlePanel("EDA: Indicadores"),
+  
+  # Application title
+  br(),
+  div(style="text-align:center",
+      img(src="logo-CAD.png", width="100") ),
+  br(),
+  
+  
+  titlePanel("Indicadores por Municipio"),
+  h3("Visualización nacional."),
   
   br(),
+  h4("Selecciona un el nivel de visualización."),
   
   wellPanel(fixedRow(column(5, selectInput(inputId = "estado.input", 
                         label = "Estado",
@@ -58,10 +68,11 @@ shinyUI(fluidPage(
   # INDICADORES ----
   tabsetPanel(
     tabPanel("Indicadores", 
+             h3("Indicadores de seguridad, educación, población, entre otros."),
              wellPanel(fixedRow(
                column(5,
                       selectInput(inputId = "indicador.input", 
-                                  label = "Indicador",
+                                  label = "Selecciona un indicador",
                                   selected = "Prop. población indigena",
                                   choices =c(
                     "violacion sexual" = "violación sexual",
@@ -91,7 +102,8 @@ shinyUI(fluidPage(
                     "Prop. con seguro imss" = "Prop. con seguro miss"))
                )
              )),
-             
+             h6("Fuente: Encuesta Nacional de Victimización y Percepción sobre Seguridad Pública 2014 a 2017."),
+             h6("Fuente: Encuesta Intercensal 2015."),
              # Show a plot of the generated distribution
              mainPanel(
                tabsetPanel(
@@ -106,27 +118,32 @@ shinyUI(fluidPage(
     
     # IMPORTANCIA ----
     tabPanel("Importancia",
+             h3("¿Cuáles son los tres temas que le preocupan más?"),
+             h4("Proporción de personas entre los encuestados que mencionó el tema entre los tres que más le preocupan."),
+             
              wellPanel(fixedRow(
                column(5,
                       selectInput(inputId = "importancia.input", 
-                                  label = "Tema de importancia",
+                                  label = "Selecciona un tema de importancia",
                                   selected = "",
-                                  choices =c("Agua",
-                                    "Corrupción",
-                                    "Desastres",
-                                    "Desempleo",
-                                    "Educación",
-                                    "Impunidad",
-                                    "Inseguridad",
-                                    "Narco",
-                                    "Pobreza",
-                                    "Precios",
-                                    "Salud",
-                                    "Otro",
-                                    "No sabe"
+                                  choices =c(
+                                    "Pobreza" = "Pobreza",
+                                    "Desempleo" = "Desempleo",
+                                    "Narcotráfico" = "Narco",
+                                    "Aumento de precios" = "Precios",
+                                    "Corrupción" = "Corrupción",
+                                    "Inseguridad" = "Inseguridad",
+                                    "Desastres naturales" = "Desastres",
+                                    "Escasez de agua" = "Agua",
+                                    "Educación" = "Educación",
+                                    "Impunidad" = "Impunidad",
+                                    "Salud" = "Salud",
+                                    "Otro" = "Otro",
+                                    "No sabe" = "No sabe"
                                     ))
                )
              )),
+             h6("Fuente: Encuesta Nacional de Victimización y Percepción sobre Seguridad Pública 2014 a 2017."),
              mainPanel(
                tabsetPanel(
                  tabPanel("Mapa", 
@@ -139,30 +156,36 @@ shinyUI(fluidPage(
     
     # PERCEPCIÓN ----
     tabPanel("Percepción",
+             h3("¿Sabe usted o ha escuchado si en los alrededores de su vivienda suceden las siguientes situaciones?"),
+             h4("Proporción de personas entre los encuestados que mencionó saber que suceden las situaciones"),
+             
+             
              wellPanel(fixedRow(
                column(5,
                       selectInput(inputId = "percepcion.input", 
-                                  label = "Tema de percepción",
+                                  label = "Selecciona una situación",
                                   selected = "",
-                                  choices =c("alcohol en la calle",
-                                             "consumo drogas",
-                                             "disparos",
-                                             "extorsiones",
-                                             "homicidios",
-                                             "invasión de predios",
-                                             "ninguna",
-                                             "no sabe",
-                                             "pandillerismo",
-                                             "policia vs ciudadanos",
-                                             "prostitución",
-                                             "riñas entre vecinos",
-                                             "robos asaltos",
-                                             "secuestros",
-                                             "venta droga",
-                                             "venta ilegal alcohol",
-                                             "venta prods pirata"))
+                                  choices =c("consume alcohol en la calle" = "alcohol en la calle",
+                                             "existe pandillerismo" = "pandillerismo",
+                                             "hay riñas entre vecinos" = "riñas entre vecinos",
+                                             "existe venta ilegal de alcohol" = "venta ilegal alcohol",
+                                             "se venden prods. pirata" = "venta prods pirata",
+                                             "hay invasión de predios" = "invasión de predios",
+                                             "se consume drogas" = "consumo drogas",
+                                             "existen robos/asaltos frecuentes" = "robos asaltos",
+                                             "se vende droga" = "venta droga",
+                                             "ha habido disparos frecuentes" = "disparos",
+                                             "hay prostitución" = "prostitución",
+                                             "ha habido secuestros" = "secuestros",
+                                             "ha habido homicidios" = "homicidios",
+                                             "ha habido extorsiones/cobro de piso" = "extorsiones",
+                                             "policia vs ciudadanos" = "policia vs ciudadanos",
+                                             "ninguna" = "ninguna",
+                                             "no sabe" = "no sabe"
+                                             ))
                )
              )),
+             h6("Fuente: Encuesta Nacional de Victimización y Percepción sobre Seguridad Pública 2014 a 2017."),
              mainPanel(
                tabsetPanel(
                  tabPanel("Mapa", 
@@ -175,10 +198,14 @@ shinyUI(fluidPage(
     
     # PROBLEMAS ----
     tabPanel("Problemas",
+             h3("¿En su colonia/municipio han tenido los siguientes problemas?"),
+             h4("Proporción de personas entre los encuestados que mencionó que han tenido el problema en la colonia."),
+             
+             
              wellPanel(fixedRow(
                column(5,
                       selectInput(inputId = "problemas.input", 
-                                  label = "Tema de problema",
+                                  label = "Selecciona un problema",
                                   selected = "",
                                   choices =c("baches o fugas de agua",
                                              "delincuencia cerca escuelas",
@@ -188,6 +215,7 @@ shinyUI(fluidPage(
                                              "robos"))
                )
              )),
+             h6("Fuente: Encuesta Nacional de Victimización y Percepción sobre Seguridad Pública 2014 a 2017."),
              mainPanel(
                tabsetPanel(
                  tabPanel("Mapa", 
@@ -201,6 +229,10 @@ shinyUI(fluidPage(
     
     # INSEGURIDAD ----
     tabPanel("Percepción Inseguridad",
+             h3("En términos de delincuencia, ¿considera que vivir en el municipio es inseguro?"),
+             h4("Proporción de personas entre los encuestados que consideran inseguro vivier en el municipio."),
+             h6("Fuente: Encuesta Nacional de Victimización y Percepción sobre Seguridad Pública 2014 a 2017."),
+             # ¿En términos de delincuencia, considera que vivir en
              mainPanel(
                tabsetPanel(
                  tabPanel("Mapa", 
@@ -212,4 +244,15 @@ shinyUI(fluidPage(
     )   # problema panel
     
   ) # tabset panel
-))
+  
+  # 
+  # # footer----
+  # br(),
+  # HTML('<p style="text-align:center">
+  #      <b> Creado por </b>
+  #      <br>
+  #      <img src="logo-CAD.png", width="90", height="35">
+  #      </p>')
+  
+)
+)
