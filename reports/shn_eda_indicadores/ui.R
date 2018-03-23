@@ -94,10 +94,12 @@ shinyUI(fluidPage(
              
              # Show a plot of the generated distribution
              mainPanel(
-               plotOutput("map_inds_gg", width = "1000px", height = "700px"),
-               br(),
-               h2("Datos puntuales."),
-               dataTableOutput("tab_inds")
+               tabsetPanel(
+                 tabPanel("Mapa", 
+                          plotOutput("map_inds_gg", width = "1000px", height = "700px")),
+                 tabPanel("Tabla", 
+                          dataTableOutput("tab_inds"))
+               )
              )
     ),  # indicador panel
     
@@ -126,10 +128,12 @@ shinyUI(fluidPage(
                )
              )),
              mainPanel(
-               plotOutput("map_importancia_gg", width = "1000px", height = "700px"),
-               br(),
-               h2("Datos puntuales."),
-               dataTableOutput("tab_importancia")
+               tabsetPanel(
+                 tabPanel("Mapa", 
+                          plotOutput("map_importancia_gg", width = "1000px", height = "700px")),
+                 tabPanel("Tabla", 
+                          dataTableOutput("tab_importancia"))
+               )
              )
     ),   # importancia panel
     
@@ -160,10 +164,12 @@ shinyUI(fluidPage(
                )
              )),
              mainPanel(
-               plotOutput("map_percepcion_gg", width = "1000px", height = "700px"),
-               br(),
-               h2("Datos puntuales."),
-               dataTableOutput("tab_percepcion")
+               tabsetPanel(
+                 tabPanel("Mapa", 
+                          plotOutput("map_percepcion_gg", width = "1000px", height = "700px")),
+                 tabPanel("Tabla", 
+                          dataTableOutput("tab_percepcion"))
+               )
              )
     ),   # percepción panel
     
@@ -183,10 +189,12 @@ shinyUI(fluidPage(
                )
              )),
              mainPanel(
-               plotOutput("map_problemas_gg", width = "1000px", height = "700px"),
-               br(),
-               h2("Datos puntuales."),
-               dataTableOutput("tab_problemas")
+               tabsetPanel(
+                 tabPanel("Mapa", 
+                          plotOutput("map_problemas_gg", width = "1000px", height = "700px")),
+                 tabPanel("Tabla", 
+                          dataTableOutput("tab_problemas"))
+               )
              )
     ),   # problema panel
     
@@ -194,10 +202,12 @@ shinyUI(fluidPage(
     # INSEGURIDAD ----
     tabPanel("Percepción Inseguridad",
              mainPanel(
-               plotOutput("map_percinseg_gg", width = "1000px", height = "700px"),
-               br(),
-               h2("Datos puntuales."),
-               dataTableOutput("tab_percinseg")
+               tabsetPanel(
+                 tabPanel("Mapa", 
+                          plotOutput("map_percinseg_gg", width = "1000px", height = "700px")),
+                 tabPanel("Tabla", 
+                          dataTableOutput("tab_percinseg"))
+               )
              )
     )   # problema panel
     
