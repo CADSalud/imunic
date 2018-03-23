@@ -20,7 +20,7 @@ shinyUI(fluidPage(
   wellPanel(fixedRow(column(5, selectInput(inputId = "estado.input", 
                         label = "Estado",
                         selected = "all",
-                        choices = c("0 México" = "all", 
+                        choices = c("0 NACIONAL" = "all", 
                                     "1 AGUASCALIENTES" = 1,
                                     "2 BAJA CALIFORNIA" = 2,
                                     "3 BAJA CALIFORNIA SUR" = 3,
@@ -55,35 +55,54 @@ shinyUI(fluidPage(
                                     "32 ZACATECAS" = 32)))
                      )),
   
+  # INDICADORES ----
   tabsetPanel(
-    tabPanel("Indicador", 
+    tabPanel("Indicadores", 
              wellPanel(fixedRow(
                column(5,
                       selectInput(inputId = "indicador.input", 
                                   label = "Indicador",
-                                  selected = "",
+                                  selected = "Prop. población indigena",
                                   choices =c(
-                                    "violacion sexual" = "violación sexual",
-                                    "homicidio" = "homicidio",
-                                    "secuestro" = "secuestro",
-                                    "desaparicion forzada" = "desparición",
-                                    "robo" = "robo",
-                                    "amenazas" = "amenazas",
-                                    "extorsión" = "extorsión",
-                                    "fraude bancario" = "fraude bancario",
-                                    "fraude consumidor" = "fraude consumidor",
-                                    "abuso sexual" = "abuso sexual",
-                                    "agresión física" = "agresión física",
-                                    "otros" = "otros"))
+                    "violacion sexual" = "violación sexual",
+                    "homicidio" = "homicidio",
+                    "secuestro" = "secuestro",
+                    "desaparicion forzada" = "desparición",
+                    "robo" = "robo",
+                    "amenazas" = "amenazas",
+                    "extorsión" = "extorsión",
+                    "fraude bancario" = "fraude bancario",
+                    "fraude consumidor" = "fraude consumidor",
+                    "abuso sexual" = "abuso sexual",
+                    "agresión física" = "agresión física",
+                    "otros" = "otros",
+                    "Prop. asisten preescolar"   = "Prop. asisten preescolar",
+                    "Prop. asisten primaria"     = "Prop. asisten primaria",
+                    "Prop. asisten secundaria"   = "Prop. asisten secundaria",
+                    "Prop. asisten preparatoria" = "Prop. asisten preparatoria",
+                    "Prop. asisten universidad"  = "Prop. asisten universidad",
+                    "Población 15 o más sin educación básica" = "Población 15 o más sin educación básica",
+                    "Población más de 75 años" = "Población más de 75 años",
+                    "Población infantil" = "Población infantil",
+                    "Población juvenil" = "Población juvenil",
+                    "Prop. población indigena" = "Prop. población indigena",
+                    "Prop. con seguro popular" = "Prop. con seguro popular",
+                    "Prop. con seguro privado" = "Prop. con seguro privado",
+                    "Prop. con seguro imss" = "Prop. con seguro miss"))
                )
              )),
              
              # Show a plot of the generated distribution
              mainPanel(
-               plotOutput("map_inds_gg", width = "1000px", height = "700px")
+               plotOutput("map_inds_gg", width = "1000px", height = "700px"),
+               br(),
+               h2("Datos puntuales."),
+               dataTableOutput("tab_inds")
              )
     ),  # indicador panel
     
+    
+    # IMPORTANCIA ----
     tabPanel("Importancia",
              wellPanel(fixedRow(
                column(5,
@@ -107,10 +126,14 @@ shinyUI(fluidPage(
                )
              )),
              mainPanel(
-               plotOutput("map_importancia_gg", width = "1000px", height = "700px")
+               plotOutput("map_importancia_gg", width = "1000px", height = "700px"),
+               br(),
+               h2("Datos puntuales."),
+               dataTableOutput("tab_importancia")
              )
     ),   # importancia panel
     
+    # PERCEPCIÓN ----
     tabPanel("Percepción",
              wellPanel(fixedRow(
                column(5,
@@ -137,10 +160,14 @@ shinyUI(fluidPage(
                )
              )),
              mainPanel(
-               plotOutput("map_percepcion_gg", width = "1000px", height = "700px")
+               plotOutput("map_percepcion_gg", width = "1000px", height = "700px"),
+               br(),
+               h2("Datos puntuales."),
+               dataTableOutput("tab_percepcion")
              )
     ),   # percepción panel
     
+    # PROBLEMAS ----
     tabPanel("Problemas",
              wellPanel(fixedRow(
                column(5,
@@ -156,13 +183,21 @@ shinyUI(fluidPage(
                )
              )),
              mainPanel(
-               plotOutput("map_problemas_gg", width = "1000px", height = "700px")
+               plotOutput("map_problemas_gg", width = "1000px", height = "700px"),
+               br(),
+               h2("Datos puntuales."),
+               dataTableOutput("tab_problemas")
              )
     ),   # problema panel
     
+    
+    # INSEGURIDAD ----
     tabPanel("Percepción Inseguridad",
              mainPanel(
-               plotOutput("map_percinseg_gg", width = "1000px", height = "700px")
+               plotOutput("map_percinseg_gg", width = "1000px", height = "700px"),
+               br(),
+               h2("Datos puntuales."),
+               dataTableOutput("tab_percinseg")
              )
     )   # problema panel
     
