@@ -1,0 +1,14 @@
+indicadores,Descripción,Tema
+ind_prop_preesc,Prop. asisten preescolar,Rezago educativo 
+ind_prop_primar,Prop. asisten primaria,Rezago educativo 
+ind_prop_secund,Prop. asisten secundaria,Rezago educativo 
+ind_prop_prepar,Prop. asisten preparatoria,Rezago educativo 
+ind_prop_univer,Prop. asisten universidad,Rezago educativo 
+ind_pob_sineducbasica,Población 15 o más sin educación básica,Rezago educativo 
+ind_pob_mas75,Población más de 75 años,Población vulnerable
+ind_pob_infantil,Población infantil,Población vulnerable
+ind_pob_juvenil,Población juvenil,Población vulnerable
+ind_prop_indigena,Prop. población indigena,Población vulnerable
+ind_prop_seguropopu,Prop. con seguro popular,Seguridad social
+ind_prop_seguropriv,Prop. con seguro privado,Seguridad social
+ind_prop_seguroimss,Prop. con seguro miss,Seguridad social
