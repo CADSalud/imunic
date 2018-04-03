@@ -32,13 +32,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
   - Salud
 
-2.1 Afiliación a servicios de salud:
+2.2 Afiliación a servicios de salud:
 
   - Seguro Popular
   - Seguro Privado
   - IMSS
   
-2.2 
 
 ## 3. Seguridad
 
@@ -66,6 +65,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
   - Aumento de precios
 
+4.2 Gasto trimestral promedio por concepto:
+
+  - Salud (DAVID: src/indicadores_enigh.R   enigh2016mun::salud_prom)
+  - Educación (DAVID: src/indicadores_enigh.R   enigh2016mun::educ_prom)
+
+4.3 Ingreso trimetral del hogar promedio (DAVID: src/indicadores_enigh.R   enigh2016mun::ingr_prom)
+
 ## 5. Educación
 
 5.1 Percepción de la población sobre problemáticas principales en el municipio:  
@@ -91,7 +97,19 @@ knitr::opts_chunk$set(echo = TRUE)
   - Baches o fugas de agua
   - Falta de alumbrado público
 
+6.3 Infraestructura en servicios básicos (porcentaje de viviendas)
 
+  - Agua potable (DAVID: damus/bd_imunac_login::sb_agua_potable)
+  - Almacenamiento de agua (DAVID: damus/bd_imunac_login::sb_almacenamiento_agua)
+  - Electricidad (DAVID: damus/bd_imunac_login::sb_electricidad)
+  - Combustible cocina (DAVID: damus/bd_imunac_login::sb_combustible_cocina)
+  - Material vivienda (DAVID: damus/bd_imunac_login::sb_material_vivienda)
+  - Saneamiento (DAVID: damus/bd_imunac_login::sb_saneamiento)
+  - Manejo de residuos (DAVID: damus/bd_imunac_login::sb_manejo_residuos)
+  - Telecomunicaciones (DAVID: damus/bd_imunac_login::sb_telecomunicaciones)
+  - Espacio suficiente (DAVID: damus/bd_imunac_login::sb_espacio)
+
+6.4 Porcentaje de hogares por encima de la línea de bienestar mínima (DAVID: src/indicadores_enigh.R   enigh2016mun::phog_arriba_lbm)
 
 ## 7. Trabajo
 
@@ -99,4 +117,4 @@ knitr::opts_chunk$set(echo = TRUE)
   
   - Desempleo
   
-7.2 Número de empleos por cada habitante en el municipio  (DAVID)
+7.2 Número de empleos por cada habitante en el municipio  (DAVID: damus/bd_imunac_login::dt_empleo_uso_suelo)
