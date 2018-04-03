@@ -1,0 +1,102 @@
+---
+title: "Ficha contextual de datos para Álvaro Obregón - Ciudad de México"
+author: "CAD"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Sociodemográficos
+
+1.1 Población general:
+
+  - Por cada hombre en el municipio hat XX mujeres. En la entidad hay YY mujeres por cada hombre.
+  - Hay XX% de jóvenes entre 15 y 35 años en el municipio. Comparado con el YY% que hay en la entidad.
+  - El 50% de la población gana XX o menos.
+  - 
+
+1.2 Población vulnerable: 
+
+  - Con más de 75 años: XX Comparado con el nivel estatal 
+  - Indigena
+  - De 15 o más sin educación básica
+  - Madres solteras
+  - Amas de casa
+
+
+## 2. Salud
+
+2.1 Percepción de la población sobre problemáticas principales en el municipio:  
+
+  - Salud
+
+2.1 Afiliación a servicios de salud:
+
+  - Seguro Popular
+  - Seguro Privado
+  - IMSS
+  
+2.2 
+
+## 3. Seguridad
+
+3.1 Percepción de la población sobre problemáticas principales en el municipio:  
+
+  - Narcotráfico
+  - Inseguridad
+  - Impunidad
+
+3.2 Problemáticas locales alrededor de la vivienda: 
+
+  - Invasión de predios
+  - Consumo de drogas
+  - Robos/Asaltos frecuentes
+  - Venta de droga
+  - Disparos frecuentes
+  - Secuestros
+  - Homicidios
+  - Extorsiones/Cobro de pisos
+  - Enfrentamientos de policías con ciudadanos
+
+## 4. Economía
+
+4.1 Percepción de la población sobre problemáticas principales en el municipio:  
+
+  - Aumento de precios
+
+## 5. Educación
+
+5.1 Percepción de la población sobre problemáticas principales en el municipio:  
+
+  - Educación
+
+5.2 Proporción de jóvenes en edad de asisitir a la escuela:
+
+  - Preescolar
+  - Primario
+  - Secundario
+  - Preparatoria
+  - Universaidad
+
+## 6. Desarrollo Social
+
+6.1 Percepción de la población sobre problemáticas principales en el municipio:  
+
+  - Escasez de agua
+
+6.2 Problemas de la colonia
+
+  - Baches o fugas de agua
+  - Falta de alumbrado público
+
+
+
+## 7. Trabajo
+
+7.1 Percepción de la población sobre problemáticas principales en el municipio:  
+  
+  - Desempleo
+  
+7.2 Número de empleos por cada habitante en el municipio  (DAVID)
