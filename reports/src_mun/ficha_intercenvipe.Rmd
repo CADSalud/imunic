@@ -15,7 +15,7 @@ header-includes:
   - \rhead{2018}
   - \lfoot{\thepage}
   - \cfoot{}
-  - \rfoot{\includegraphics[width=1cm]{logo-CAD.png}} 
+  - \rfoot{\includegraphics[width=1.5cm]{logo-CAD.png}} 
 ---
 
 
@@ -29,9 +29,13 @@ source("run_reports.R")
 
 # municipios_selec <- c("Sultepec","Texcaltitlán", "Almoloya de Alquisiras")
 # municipios_selec <- c("Álvaro Obregón", 9)
-municipios_selec <- c("Sultepec", 15)
+# municipios_selec <- c("Sultepec", 15)
+municipios_selec <- c("Texcaltitlán", 15)
 tablas_l <- tablas_load_fun(municipios_selec = municipios_selec[1], 
                             state_code_selec = municipios_selec[2])
+format_fun <- function(vector){
+  format(vector, big.mark=",",scientific=FALSE)  
+}
 ```
 
 
@@ -44,15 +48,9 @@ tablas_l <- tablas_load_fun(municipios_selec = municipios_selec[1],
 tab_interc <- tablas_l$tab_interc
 tab_estatal <- tablas_l$tab_estatal
 
-pob_16a35 <- tab_interc$`pob_edad_(15,20]` + 
-  tab_interc$`pob_edad_(20,25]` + 
-  tab_interc$`pob_edad_(25,30]` + 
-  tab_interc$`pob_edad_(30,35]`
+pob_16a35 <- tab_interc$pob_15o35
 
-pob_16a35_est <- tab_estatal$`pob_edad_(15,20]` + 
-  tab_estatal$`pob_edad_(20,25]` + 
-  tab_estatal$`pob_edad_(25,30]` + 
-  tab_estatal$`pob_edad_(30,35]`
+pob_16a35_est <- tab_estatal$pob_15o35
 
 jovenes_mun <- round(100*pob_16a35/tab_interc$pob_total)
 jovenes_est <- round(100*pob_16a35_est/tab_estatal$pob_total)
@@ -67,45 +65,119 @@ comp_jovenes <- case_when(
 
 1.1 Población general:
 
-El municipio tiene una población de `r format(tab_interc$pob_total, big.mark=",",scientific=FALSE)` personas. Donde el `r round(100*tab_interc$pob_mujeres/tab_interc$pob_total)`% son mujeres. Es decir, por cada hombre en el municipio hay `r round(tab_interc$pob_mujeres/tab_interc$pob_hombres, 1)` mujeres. 
+El municipio tiene una población de `r format_fun(tab_interc$pob_total)` personas. Donde el `r round(100*tab_interc$pob_mujeres/tab_interc$pob_total)`% son mujeres. Es decir, por cada hombre en el municipio hay `r round(tab_interc$pob_mujeres/tab_interc$pob_hombres, 1)` mujeres. 
 
-Hay `r format(pob_16a35, big.mark=",",scientific=FALSE)` de jóvenes entre 16 y 35 años.
+Hay `r format_fun(pob_16a35)` jóvenes entre 15 y 35 años.
 Esto representa el `r jovenes_mun`% de la población del municipio. `r paste(comp_jovenes)`
 a la proporción en la entidad (`r jovenes_est`%).
 
+```{r}
+comp_ingreso <- case_when(
+  tab_interc$ingreso_q50 >  tablas_l$tab_ingreso_ent$ingreso_q50 ~ "mayor",
+  tab_interc$ingreso_q50 == tablas_l$tab_ingreso_ent$ingreso_q50 ~ "igual",
+  tab_interc$ingreso_q50 <  tablas_l$tab_ingreso_ent$ingreso_q50 ~ "menor")
+```
 
-  - El 50% de la población gana XX o menos.
-  
+El 50% de la población gana \$`r format_fun(round(tab_interc$ingreso_q50))` o menos al mes. Esto es `r paste(comp_ingreso)` al valor estatal \$`r format_fun(round(tablas_l$tab_ingreso_ent$ingreso_q50))`.
+
+
+La diferencia entre el ingreso por persona del 25% más bajo y el 75% más alto es de `r format_fun(round(tab_interc$ingreso_q75 - tab_interc$ingreso_q25))`. Esto representa aproximadamente `r round(tab_interc$ingreso_q75/tab_interc$ingreso_q25)` veces el nivel bajo en el alto. A nivel estatal es aproximadamente `r round(tablas_l$tab_ingreso_ent$ingreso_q75/tablas_l$tab_ingreso_ent$ingreso_q25)` veces. 
+
 
 1.2 Población vulnerable: 
 
-  - Con más de 75 años: XX Comparado con el nivel estatal 
-  - Indigena
-  - De 15 o más sin educación básica
-  - Madres solteras
-  - Amas de casa
+```{r}
+porc75 <- round(100*tab_interc$pob_mas75/tab_interc$pob_total)
+porc75est <- round(100*tab_estatal$pob_mas75/tab_estatal$pob_total)
+comp_porc75 <- case_when(
+  porc75 >  porc75est ~ "mayor",
+  porc75 == porc75est ~ "igual",
+  porc75 <  porc75est ~ "menor")
+```
+
+
+  - Hay `r format_fun(tab_interc$pob_mas75)` personas de 75 años o mas. Esto representa el `r porc75`% de la población del municipio. Esto es `r comp_porc75` que el `r porc75est`% observado en la entidad. Esta población representa el `r round(100*tab_interc$pob_mas75/tab_estatal$pob_mas75, 1)`% de los mayores de 75 años en el estado.
+  
+  - Hay `r format_fun(tab_interc$pob_perte_indigena)` pertenecientes a la cultura indígena. Esto es el `r round(100*tab_interc$pob_perte_indigena/tab_interc$pob_total)`% de la población del municipio.
+  
+  - Hay `r format_fun(tab_interc$pob_15mas_sinedubasica)` personas de 15 o más sin educación básica. Esto es el `r round(100*tab_interc$pob_15mas_sinedubasica/tab_interc$pob_15omas)`% de la población mayor de 15 años del municipio.
+  
+  - Hay `r format_fun(tab_interc$madres_solteras)` madres solteras en el municipio. Esto es el `r round(100*tab_interc$madres_solteras/(tab_interc$madres_solteras + tab_interc$madres_nosolteras))`% de las madres del municipio. 
+  
+  - Hay `r format_fun(tab_interc$amas_casa)` personas que se dedican a las labores del hogar sin recibir pago.
+
+  - Hay `r format_fun(tab_interc$incapacitado)` personas incapacitadas física o mentalmente para trabajar.
+
 
 
 ## 2. Salud
 
 2.1 Percepción de la población sobre problemáticas principales en el municipio:  
 
-  - Salud
+```{r}
+tab_envipe <- tablas_l$tab_envipe
+tab <- tab_envipe %>% 
+  filter(Tema == "importancia", Descripción == "Salud")
+if( is.na(tab$valor)){
+  frase <- "Este municipio no tiene información sobre el ranking de salud como problemática principal"
+}
+if( !is.na(tab$valor)){
+  frase <- paste("El", paste0(round(100*tab$valor), "%"), "considera el tema salud como una de las tres principales problemáticas en el municipio")
+}
+```
+
+
+`r paste(frase)`.
+  
 
 2.2 Afiliación a servicios de salud:
 
-  - Seguro Popular
-  - Seguro Privado
-  - IMSS
+  - El `r round(100*tab_interc$ind_prop_seguroimss)`% esta afiliado al IMSS.
+  
+  - El `r round(100*tab_interc$ind_prop_seguropopu)`% esta afiliado al Seguro Popular. 
+  
+  - El `r round(100*tab_interc$ind_prop_seguropriv)`% cuenta con seguro privado. 
+  
+  
+  
   
 
 ## 3. Seguridad
 
 3.1 Percepción de la población sobre problemáticas principales en el municipio:  
 
-  - Narcotráfico
-  - Inseguridad
-  - Impunidad
+```{r}
+tab <- tab_envipe %>% 
+  filter(Tema == "importancia", Descripción %in% c( "Narco", "Inseguridad", "Impunidad"))
+if( sum(is.na(tab$valor)) == 3 ) {
+  frase <- "Este municipio no tiene información sobre el ranking de problemáticas de seguridad"
+}
+if( sum(is.na(tab$valor)) < 3 ){
+  
+  tt <- tab %>% 
+    filter(!is.na(valor)) %>% 
+    mutate(valor = round(100*valor)) %>% 
+    arrange(desc(valor))
+  
+  frase <- paste("En el municipio el", 
+        paste0(paste0(tt$valor, "% considera "), tolower(tt$Descripción), collapse = ", " ), 
+        "entre las tres problemáticas principales")
+}
+```
+
+
+```{r}
+tab <- tab_envipe %>% 
+  filter(Tema == "inseguridad")
+frase_inseg <- ""
+if( !is.na(tab$valor)){
+  frase_inseg <- paste0("El ", round(tab$valor*100), "% considera su municipio inseguro.")
+}
+```
+
+`r paste(frase, frase_inseg, sep = ". ")`
+
+
 
 3.2 Problemáticas locales alrededor de la vivienda: 
 
@@ -123,7 +195,20 @@ a la proporción en la entidad (`r jovenes_est`%).
 
 4.1 Percepción de la población sobre problemáticas principales en el municipio:  
 
-  - Aumento de precios
+```{r}
+tab <- tab_envipe %>% 
+  filter(Tema == "importancia", Descripción == "Precios")
+if( is.na(tab$valor)){
+  frase <- "Este municipio no tiene información sobre el ranking de aumento de precios como problemática principal"
+}
+if( !is.na(tab$valor)){
+  frase <- paste("El", paste0(round(100*tab$valor), "%"), "considera el aumento de precios como una de las tres principales problemáticas en el municipio")
+}
+```
+
+`r frase`.
+
+
 
 4.2 Gasto trimestral promedio por concepto:
 
@@ -136,7 +221,19 @@ a la proporción en la entidad (`r jovenes_est`%).
 
 5.1 Percepción de la población sobre problemáticas principales en el municipio:  
 
-  - Educación
+```{r}
+tab <- tab_envipe %>% 
+  filter(Tema == "importancia", Descripción == "Educación")
+if( is.na(tab$valor)){
+  frase <- "Este municipio no tiene información sobre el ranking de educación como problemática principal"
+}
+if( !is.na(tab$valor)){
+  frase <- paste("El", paste0(round(100*tab$valor), "%"), "considera educación como una de las tres principales problemáticas en el municipio")
+}
+```
+
+`r frase`.
+
 
 5.2 Proporción de jóvenes en edad de asisitir a la escuela:
 
@@ -150,7 +247,28 @@ a la proporción en la entidad (`r jovenes_est`%).
 
 6.1 Percepción de la población sobre problemáticas principales en el municipio:  
 
-  - Escasez de agua
+
+```{r}
+tab <- tab_envipe %>% 
+  filter(Tema == "importancia", Descripción %in% c( "Agua", "Pobreza"))
+if( sum(is.na(tab$valor)) == 2 ) {
+  frase <- "Este municipio no tiene información sobre el ranking de problemáticas de seguridad"
+}
+if( sum(is.na(tab$valor)) < 2 ){
+  
+  tt <- tab %>% 
+    filter(!is.na(valor)) %>% 
+    mutate(valor = round(100*valor)) %>% 
+    arrange(desc(valor))
+  
+  frase <- paste("En el municipio el", 
+        paste0(paste0(tt$valor, "% considera "), tolower(tt$Descripción), collapse = " y " ), 
+        "entre las tres problemáticas principales")
+}
+```
+
+`r frase`.
+
 
 6.2 Problemas de la colonia
 
@@ -175,6 +293,17 @@ a la proporción en la entidad (`r jovenes_est`%).
 
 7.1 Percepción de la población sobre problemáticas principales en el municipio:  
   
-  - Desempleo
+```{r}
+tab <- tab_envipe %>% 
+  filter(Tema == "importancia", Descripción == "Desempleo")
+if( is.na(tab$valor)){
+  frase <- "Este municipio no tiene información sobre el ranking de desempleo como problemática principal"
+}
+if( !is.na(tab$valor)){
+  frase <- paste("El", paste0(round(100*tab$valor), "%"), "considera desempleo como una de las tres principales problemáticas en el municipio")
+}
+```
+
+`r frase`.
   
 7.2 Número de empleos por cada habitante en el municipio  (DAVID: damus/bd_imunac_login::dt_empleo_uso_suelo)
