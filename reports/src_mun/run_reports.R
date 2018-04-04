@@ -45,9 +45,15 @@ tablas_load_fun <- function(municipios_selec, state_code_selec){
     dplyr::select(-c(state_code, mun_code, COBERTURA)) %>% 
     summarise_all(.funs = sum)
   
+  # Ingreso entidad
+  load("cache/pob_trabajaingreso_ent.RData")
+  tab_ingreso_ent <- pob_trabajaingreso_ent %>% 
+    filter(parse_number(ENT) == tab_estmun_selec$state_code)
+  
   tablas <- list(tab_envipe = tab_envipe, 
                  tab_interc = tab_interc, 
                  tab_estatal = tab_estatal, 
-                 entidad = tab_estmun_selec)
+                 entidad = tab_estmun_selec, 
+                 tab_ingreso_ent = tab_ingreso_ent)
 }
 
