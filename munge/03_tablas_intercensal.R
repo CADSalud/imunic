@@ -2,7 +2,6 @@
 
 # Tablas de indicadores intercensal 2015
 
-
 library(tidyverse)
 library(bigrquery)
 
@@ -12,6 +11,8 @@ names(inds_list)
 
 query_exec("SELECT * FROM [imunic-196018:intercensal.persona_append] LIMIT 3",
            project = "imunic-196018")
+
+
 
 
 # Afiliación a servicios de salud----
@@ -203,11 +204,49 @@ inds_list$`pob_actanacim` <- tab %>%
 inds_list$`pob_actanacim`
 
 
+# Sexo ----
+tab <- query_exec("SELECT ENT, MUN, COBERTURA, SEXO, sum(FACTOR), count(FACTOR) FROM [imunic-196018:intercensal.persona_append]  GROUP BY ENT, MUN, COBERTURA, SEXO",
+                  project = "imunic-196018") %>% 
+  as_tibble() %>% 
+  rename(n_facexp = f0_,
+         n = f1_) 
+
+inds_list$`pob_sexo` <- tab %>% 
+  mutate(indicadores = paste0("pob_", 
+                             fct_recode(SEXO, 
+                                        mujeres = "3",
+                                        hombres = "1")) ) %>% 
+  select(ENT, MUN, COBERTURA, indicadores, valor = n_facexp)
+inds_list$`pob_sexo`
+
+
+# Madres solteras ----
+tab <- query_exec("SELECT ENT, MUN, COBERTURA, SITUA_CONYUGAL, HIJOS_SOBREVIV, sum(FACTOR), count(FACTOR) FROM [imunic-196018:intercensal.persona_append]  GROUP BY ENT, MUN, COBERTURA, SITUA_CONYUGAL, HIJOS_SOBREVIV", project = "imunic-196018", max_pages = Inf) %>% 
+  as_tibble() %>% 
+  rename(n_facexp = f0_,
+         n = f1_) 
+
+inds_list$`madres_solteras` <-
+  tab %>% 
+    mutate(madres_solteras = HIJOS_SOBREVIV > 0 & 
+             SITUA_CONYUGAL %in% c(2, 3, 4, 6), 
+           madres_nosolteras = HIJOS_SOBREVIV > 0 & 
+             SITUA_CONYUGAL %in% c(1, 5), 
+           mujeres_nosolteras = SITUA_CONYUGAL %in% c(1, 5)) %>% 
+    dplyr::select(ENT:COBERTURA, n_facexp, madres_solteras:mujeres_nosolteras) %>% 
+    gather(indicadores, value, -c(ENT, MUN, COBERTURA, n_facexp)) %>% 
+    filter(value) %>% 
+    group_by(ENT, MUN, COBERTURA, indicadores) %>% 
+    summarise(valor = sum(n_facexp)) %>% 
+    ungroup()
+inds_list$`madres_solteras`
 
 
 
 # guardar ----
 names(inds_list)
+length(inds_list) # 14
+
 cache("inds_list")
 
 sapply(inds_list, dim)
