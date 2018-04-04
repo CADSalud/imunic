@@ -291,7 +291,32 @@ inds_list$`pob_trabajaingreso` <- tab %>%
 inds_list$`pob_trabajaingreso`
   
 
+pob_trabajaingreso_ent <- 
+  tab %>% 
+  mutate(CONACT = parse_number(CONACT), 
+         INGTRMEN = ifelse(INGTRMEN == '999999', NA, parse_number(INGTRMEN)),
+         econom_activos = CONACT %in% c(10:16)) %>% 
+  filter(econom_activos) %>% 
+  group_by(ENT) %>% 
+  summarise(ingreso_q50 = spatstat::weighted.quantile(x = INGTRMEN, 
+                                                      w = n_facexp, 
+                                                      probs = .5, na.rm = TRUE),
+            ingreso_q25 = spatstat::weighted.quantile(x = INGTRMEN, 
+                                                      w = n_facexp, 
+                                                      probs = .25, na.rm = TRUE),
+            ingreso_q75 = spatstat::weighted.quantile(x = INGTRMEN, 
+                                                      w = n_facexp, 
+                                                      probs = .75, na.rm = TRUE),
+            ingreso_q10 = spatstat::weighted.quantile(x = INGTRMEN, 
+                                                      w = n_facexp, 
+                                                      probs = .10, na.rm = TRUE),
+            ingreso_q90 = spatstat::weighted.quantile(x = INGTRMEN, 
+                                                      w = n_facexp, 
+                                                      probs = .90, na.rm = TRUE),
+            pob_trabaja = sum(n_facexp))
+pob_trabajaingreso_ent
 
+cache("pob_trabajaingreso_ent")
 
 
 # población mayor de 12 años ----
@@ -304,6 +329,7 @@ inds_list$`pob_edadesespc` <- tab %>%
   mutate(EDAD = ifelse(EDAD == '999', NA, parse_number(EDAD))) %>% 
   group_by(ENT, MUN, COBERTURA) %>% 
   summarise(pob_12omas = sum(n_facexp*(EDAD >= 12), na.rm = T), 
+            pob_15omas = sum(n_facexp*(EDAD >= 15), na.rm = T), 
             pob_15o35 = sum(n_facexp*(EDAD >= 15 & EDAD <= 35), na.rm = T),
             pob_menos12 = sum(n_facexp*(EDAD < 12), na.rm = T)) %>% 
   ungroup() %>% 
@@ -312,7 +338,7 @@ inds_list$`pob_edadesespc`
 
 # guardar ----
 names(inds_list)
-length(inds_list) # 16
+length(inds_list) # 17
 
 cache("inds_list")
 
