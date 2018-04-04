@@ -1,0 +1,180 @@
+---
+output: pdf_document
+linestretch: 1.1
+header-includes:
+  - \usepackage{color}
+  - \usepackage[spanish]{babel}
+  - \usepackage[utf8]{inputenc}
+  - \usepackage{amsmath,amsfonts,amsthm}
+  - \usepackage[svgnames]{xcolor}
+  - \renewcommand{\familydefault}{\sfdefault}
+  - \usepackage{fancyhdr}
+  - \pagestyle{fancy}
+  - \lhead{Ficha contextual}
+  - \chead{}
+  - \rhead{2018}
+  - \lfoot{\thepage}
+  - \cfoot{}
+  - \rfoot{\includegraphics[width=1cm]{logo-CAD.png}} 
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(tidyverse)
+
+# Municipios
+source("run_reports.R")
+
+# municipios_selec <- c("Sultepec","Texcaltitlán", "Almoloya de Alquisiras")
+# municipios_selec <- c("Álvaro Obregón", 9)
+municipios_selec <- c("Sultepec", 15)
+tablas_l <- tablas_load_fun(municipios_selec = municipios_selec[1], 
+                            state_code_selec = municipios_selec[2])
+```
+
+
+# Ficha contextual de datos para `r paste(tablas_l$entidad$NOM_MUN)` - `r paste(tablas_l$entidad$NOM_ENT)` 
+
+
+## 1. Sociodemográficos
+
+```{r}
+tab_interc <- tablas_l$tab_interc
+tab_estatal <- tablas_l$tab_estatal
+
+pob_16a35 <- tab_interc$`pob_edad_(15,20]` + 
+  tab_interc$`pob_edad_(20,25]` + 
+  tab_interc$`pob_edad_(25,30]` + 
+  tab_interc$`pob_edad_(30,35]`
+
+pob_16a35_est <- tab_estatal$`pob_edad_(15,20]` + 
+  tab_estatal$`pob_edad_(20,25]` + 
+  tab_estatal$`pob_edad_(25,30]` + 
+  tab_estatal$`pob_edad_(30,35]`
+
+jovenes_mun <- round(100*pob_16a35/tab_interc$pob_total)
+jovenes_est <- round(100*pob_16a35_est/tab_estatal$pob_total)
+comp_jovenes <- case_when(
+  jovenes_mun>jovenes_est ~ "Mayor",
+  jovenes_mun ==jovenes_est ~ "Igual",
+  jovenes_mun<jovenes_est ~ "Menor"
+)
+```
+
+
+
+1.1 Población general:
+
+El municipio tiene una población de `r format(tab_interc$pob_total, big.mark=",",scientific=FALSE)` personas. Donde el `r round(100*tab_interc$pob_mujeres/tab_interc$pob_total)`% son mujeres. Es decir, por cada hombre en el municipio hay `r round(tab_interc$pob_mujeres/tab_interc$pob_hombres, 1)` mujeres. 
+
+Hay `r format(pob_16a35, big.mark=",",scientific=FALSE)` de jóvenes entre 16 y 35 años.
+Esto representa el `r jovenes_mun`% de la población del municipio. `r paste(comp_jovenes)`
+a la proporción en la entidad (`r jovenes_est`%).
+
+
+  - El 50% de la población gana XX o menos.
+  
+
+1.2 Población vulnerable: 
+
+  - Con más de 75 años: XX Comparado con el nivel estatal 
+  - Indigena
+  - De 15 o más sin educación básica
+  - Madres solteras
+  - Amas de casa
+
+
+## 2. Salud
+
+2.1 Percepción de la población sobre problemáticas principales en el municipio:  
+
+  - Salud
+
+2.2 Afiliación a servicios de salud:
+
+  - Seguro Popular
+  - Seguro Privado
+  - IMSS
+  
+
+## 3. Seguridad
+
+3.1 Percepción de la población sobre problemáticas principales en el municipio:  
+
+  - Narcotráfico
+  - Inseguridad
+  - Impunidad
+
+3.2 Problemáticas locales alrededor de la vivienda: 
+
+  - Invasión de predios
+  - Consumo de drogas
+  - Robos/Asaltos frecuentes
+  - Venta de droga
+  - Disparos frecuentes
+  - Secuestros
+  - Homicidios
+  - Extorsiones/Cobro de pisos
+  - Enfrentamientos de policías con ciudadanos
+
+## 4. Economía
+
+4.1 Percepción de la población sobre problemáticas principales en el municipio:  
+
+  - Aumento de precios
+
+4.2 Gasto trimestral promedio por concepto:
+
+  - Salud (DAVID: src/indicadores_enigh.R   enigh2016mun::salud_prom)
+  - Educación (DAVID: src/indicadores_enigh.R   enigh2016mun::educ_prom)
+
+4.3 Ingreso trimetral del hogar promedio (DAVID: src/indicadores_enigh.R   enigh2016mun::ingr_prom)
+
+## 5. Educación
+
+5.1 Percepción de la población sobre problemáticas principales en el municipio:  
+
+  - Educación
+
+5.2 Proporción de jóvenes en edad de asisitir a la escuela:
+
+  - Preescolar
+  - Primario
+  - Secundario
+  - Preparatoria
+  - Universaidad
+
+## 6. Desarrollo Social
+
+6.1 Percepción de la población sobre problemáticas principales en el municipio:  
+
+  - Escasez de agua
+
+6.2 Problemas de la colonia
+
+  - Baches o fugas de agua
+  - Falta de alumbrado público
+
+6.3 Infraestructura en servicios básicos (porcentaje de viviendas)
+
+  - Agua potable (DAVID: damus/bd_imunac_login::sb_agua_potable)
+  - Almacenamiento de agua (DAVID: damus/bd_imunac_login::sb_almacenamiento_agua)
+  - Electricidad (DAVID: damus/bd_imunac_login::sb_electricidad)
+  - Combustible cocina (DAVID: damus/bd_imunac_login::sb_combustible_cocina)
+  - Material vivienda (DAVID: damus/bd_imunac_login::sb_material_vivienda)
+  - Saneamiento (DAVID: damus/bd_imunac_login::sb_saneamiento)
+  - Manejo de residuos (DAVID: damus/bd_imunac_login::sb_manejo_residuos)
+  - Telecomunicaciones (DAVID: damus/bd_imunac_login::sb_telecomunicaciones)
+  - Espacio suficiente (DAVID: damus/bd_imunac_login::sb_espacio)
+
+6.4 Porcentaje de hogares por encima de la línea de bienestar mínima (DAVID: src/indicadores_enigh.R   enigh2016mun::phog_arriba_lbm)
+
+## 7. Trabajo
+
+7.1 Percepción de la población sobre problemáticas principales en el municipio:  
+  
+  - Desempleo
+  
+7.2 Número de empleos por cada habitante en el municipio  (DAVID: damus/bd_imunac_login::dt_empleo_uso_suelo)
