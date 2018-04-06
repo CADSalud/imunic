@@ -29,8 +29,11 @@ source("run_reports.R")
 
 # municipios_selec <- c("Sultepec","Texcaltitlán", "Almoloya de Alquisiras")
 # municipios_selec <- c("Álvaro Obregón", 9)
+# municipios_selec <- c("Cuajimalpa de Morelos", 9)
 # municipios_selec <- c("Sultepec", 15)
-municipios_selec <- c("Texcaltitlán", 15)
+# municipios_selec <- c("Texcaltitlán", 15)
+# municipios_selec <- c("Jilotepec", 30)
+municipios_selec <- c("Chumatlán", 30)
 tablas_l <- tablas_load_fun(municipios_selec = municipios_selec[1], 
                             state_code_selec = municipios_selec[2])
 format_fun <- function(vector){
@@ -39,10 +42,7 @@ format_fun <- function(vector){
 ```
 
 
-# Ficha contextual de datos para `r paste(tablas_l$entidad$NOM_MUN)` - `r paste(tablas_l$entidad$NOM_ENT)` 
-
-
-## 1. Sociodemográficos
+# Ficha contextual de datos sociodemográficos para `r paste(tablas_l$entidad$NOM_MUN)` - `r paste(tablas_l$entidad$NOM_ENT)` 
 
 ```{r}
 tab_interc <- tablas_l$tab_interc
@@ -63,9 +63,9 @@ comp_jovenes <- case_when(
 
 
 
-1.1 Población general:
+\subsection{1. Población general:}
 
-El municipio tiene una población de `r format_fun(tab_interc$pob_total)` personas. Donde el `r round(100*tab_interc$pob_mujeres/tab_interc$pob_total)`% son mujeres. Es decir, por cada hombre en el municipio hay `r round(tab_interc$pob_mujeres/tab_interc$pob_hombres, 1)` mujeres. 
+El municipio tiene una población de **`r format_fun(tab_interc$pob_total)`** personas. Donde el `r round(100*tab_interc$pob_mujeres/tab_interc$pob_total)`% son mujeres. Es decir, por cada hombre en el municipio hay `r round(tab_interc$pob_mujeres/tab_interc$pob_hombres, 1)` mujeres. 
 
 Hay `r format_fun(pob_16a35)` jóvenes entre 15 y 35 años.
 Esto representa el `r jovenes_mun`% de la población del municipio. `r paste(comp_jovenes)`
@@ -81,10 +81,22 @@ comp_ingreso <- case_when(
 El 50% de la población gana \$`r format_fun(round(tab_interc$ingreso_q50))` o menos al mes. Esto es `r paste(comp_ingreso)` al valor estatal \$`r format_fun(round(tablas_l$tab_ingreso_ent$ingreso_q50))`.
 
 
-La diferencia entre el ingreso por persona del 25% más bajo y el 75% más alto es de `r format_fun(round(tab_interc$ingreso_q75 - tab_interc$ingreso_q25))`. Esto representa aproximadamente `r round(tab_interc$ingreso_q75/tab_interc$ingreso_q25)` veces el nivel bajo en el alto. A nivel estatal es aproximadamente `r round(tablas_l$tab_ingreso_ent$ingreso_q75/tablas_l$tab_ingreso_ent$ingreso_q25)` veces. 
+```{r}
+frase <-  ""
+if(tab_interc$ingreso_q25 > 0){
+  frase <- paste0("Esto representa aproximadamente ",
+                  round(tab_interc$ingreso_q75/tab_interc$ingreso_q25), 
+                  " veces el nivel bajo en el alto. A nivel estatal es aproximadamente ", 
+                  round(tablas_l$tab_ingreso_ent$ingreso_q75/tablas_l$tab_ingreso_ent$ingreso_q25), 
+                  " veces.") 
+}
+```
 
 
-1.2 Población vulnerable: 
+La diferencia entre el ingreso por persona del 25% más bajo y el 75% más alto es de `r format_fun(round(tab_interc$ingreso_q75 - tab_interc$ingreso_q25))`. `r frase`
+
+
+\subsubsection{1.1 Población vulnerable: }
 
 ```{r}
 porc75 <- round(100*tab_interc$pob_mas75/tab_interc$pob_total)
@@ -110,9 +122,9 @@ comp_porc75 <- case_when(
 
 
 
-## 2. Salud
+\subsection{ 2. Salud}
 
-2.1 Percepción de la población sobre problemáticas principales en el municipio:  
+\subsubsection{2.1 Percepción de la población sobre problemáticas principales en el municipio:  }
 
 ```{r}
 tab_envipe <- tablas_l$tab_envipe
@@ -130,23 +142,32 @@ if( !is.na(tab$valor)){
 `r paste(frase)`.
   
 
-2.2 Afiliación a servicios de salud:
+\subsubsection{2.2 Afiliación a servicios de salud:}
 
   - El `r round(100*tab_interc$ind_prop_seguroimss)`% esta afiliado al IMSS.
-  
   - El `r round(100*tab_interc$ind_prop_seguropopu)`% esta afiliado al Seguro Popular. 
-  
   - El `r round(100*tab_interc$ind_prop_seguropriv)`% cuenta con seguro privado. 
   
   
   
   
 
-## 3. Seguridad
+\subsection{ 3. Seguridad}
 
-3.1 Percepción de la población sobre problemáticas principales en el municipio:  
+\subsubsection{3.1 Percepción de la población sobre problemáticas principales en el municipio:}
 
-```{r}
+
+```{r, results='asis'}
+tab <- tab_envipe %>% 
+  filter(Tema == "inseguridad")
+frase_inseg <- ""
+if( !is.na(tab$valor)){
+  frase_inseg <- paste0("El **", round(tab$valor*100), "%** de los encuestados consideran su municipio inseguro.")
+}
+cat(frase_inseg, "\n")
+```
+
+```{r, results='asis'}
 tab <- tab_envipe %>% 
   filter(Tema == "importancia", Descripción %in% c( "Narco", "Inseguridad", "Impunidad"))
 if( sum(is.na(tab$valor)) == 3 ) {
@@ -163,39 +184,49 @@ if( sum(is.na(tab$valor)) < 3 ){
         paste0(paste0(tt$valor, "% considera "), tolower(tt$Descripción), collapse = ", " ), 
         "entre las tres problemáticas principales")
 }
+cat(frase, "\n")
 ```
 
 
-```{r}
+
+
+\subsubsection{3.2 Percepción de problemáticas locales alrededor de la vivienda:}
+
+
+```{r, results='asis'}
+row_percepcion_fun <- function(row){
+  frase <- paste0("El ", row$valor, "% ", row$Descripción, "." )
+  frase
+}
 tab <- tab_envipe %>% 
-  filter(Tema == "inseguridad")
-frase_inseg <- ""
-if( !is.na(tab$valor)){
-  frase_inseg <- paste0("El ", round(tab$valor*100), "% considera su municipio inseguro.")
+  filter(Tema == "percepción")
+if(sum(is.na(tab$valor)) < nrow(tab)){
+  tab_in <- tab %>% 
+    na.omit %>% 
+    filter(valor > .49) %>% 
+    mutate(valor = round(100*valor)) %>% 
+    arrange(desc(valor))
+  lista_in <- tab_in %>% 
+    rowwise() %>% 
+    do(res = row_percepcion_fun(row = .)) %>% 
+    .$res
+  cat("En esta sección se presentan las problemáticas que más de la mayoría ha visto al rededor de su vivienda:\n\n")  
+  for (i in 1:length(lista_in)){
+    cat("-", lista_in[[i]][1], "\n")
+    }
+}
+if(sum(is.na(tab$valor)) ==  nrow(tab)){
+ cat("No hay información de este municipio sobre problemáticas locales.", "\n")  
 }
 ```
 
-`r paste(frase, frase_inseg, sep = ". ")`
 
 
+\subsection{ 4. Economía}
 
-3.2 Problemáticas locales alrededor de la vivienda: 
+\subsubsection{4.1 Percepción de la población sobre problemáticas principales en el municipio:}
 
-  - Invasión de predios
-  - Consumo de drogas
-  - Robos/Asaltos frecuentes
-  - Venta de droga
-  - Disparos frecuentes
-  - Secuestros
-  - Homicidios
-  - Extorsiones/Cobro de pisos
-  - Enfrentamientos de policías con ciudadanos
-
-## 4. Economía
-
-4.1 Percepción de la población sobre problemáticas principales en el municipio:  
-
-```{r}
+```{r, results='asis'}
 tab <- tab_envipe %>% 
   filter(Tema == "importancia", Descripción == "Precios")
 if( is.na(tab$valor)){
@@ -204,24 +235,26 @@ if( is.na(tab$valor)){
 if( !is.na(tab$valor)){
   frase <- paste("El", paste0(round(100*tab$valor), "%"), "considera el aumento de precios como una de las tres principales problemáticas en el municipio")
 }
+cat(frase, "\n\n")
 ```
 
-`r frase`.
 
-
-
-4.2 Gasto trimestral promedio por concepto:
+\subsubsection{4.2 Gasto trimestral promedio por concepto:}
 
   - Salud (DAVID: src/indicadores_enigh.R   enigh2016mun::salud_prom)
   - Educación (DAVID: src/indicadores_enigh.R   enigh2016mun::educ_prom)
 
-4.3 Ingreso trimetral del hogar promedio (DAVID: src/indicadores_enigh.R   enigh2016mun::ingr_prom)
+\subsubsection{4.3 Ingreso trimetral del hogar promedio.} 
 
-## 5. Educación
+(DAVID: src/indicadores_enigh.R   enigh2016mun::ingr_prom)
 
-5.1 Percepción de la población sobre problemáticas principales en el municipio:  
 
-```{r}
+
+\subsection{5. Educación}
+
+\subsubsection{5.1 Percepción de la población sobre problemáticas principales en el municipio:}
+
+```{r, results='asis'}
 tab <- tab_envipe %>% 
   filter(Tema == "importancia", Descripción == "Educación")
 if( is.na(tab$valor)){
@@ -230,25 +263,31 @@ if( is.na(tab$valor)){
 if( !is.na(tab$valor)){
   frase <- paste("El", paste0(round(100*tab$valor), "%"), "considera educación como una de las tres principales problemáticas en el municipio")
 }
+cat(frase, "\n")
 ```
 
-`r frase`.
+\subsubsection{5.2 Proporción de población en edad de asisitir a la escuela:}
 
 
-5.2 Proporción de jóvenes en edad de asisitir a la escuela:
+```{r, results='asis'}
+frases_l <- list(
+  paste0("El ", round(100*tab_interc$ind_prop_preesc), "% de los niños entre 3 y 5 años asisten a preescolar."),
+  paste0("El ", round(100*tab_interc$ind_prop_primar), "% de los niños entre 6 y 12 años asisten a primaria."),
+  paste0("El ", round(100*tab_interc$ind_prop_secund), "% de los niños entre 13 y 15 años asisten a secundaria."),
+  paste0("El ", round(100*tab_interc$ind_prop_prepar), "% de los jóvenes entre 16 y 18 años asisten a preparatoria."),
+  paste0("El ", round(100*tab_interc$ind_prop_univer), "% de los jóvenes entre 19 y 26 años asisten a universidad.")
+)
+for(i in 1:length(frases_l)){
+  cat("-", frases_l[[i]][[1]], "\n")
+}
+```
 
-  - Preescolar
-  - Primario
-  - Secundario
-  - Preparatoria
-  - Universaidad
 
 ## 6. Desarrollo Social
 
-6.1 Percepción de la población sobre problemáticas principales en el municipio:  
+\subsubsection{6.1 Percepción de la población sobre problemáticas principales en el municipio:}
 
-
-```{r}
+```{r, results='asis'}
 tab <- tab_envipe %>% 
   filter(Tema == "importancia", Descripción %in% c( "Agua", "Pobreza"))
 if( sum(is.na(tab$valor)) == 2 ) {
@@ -265,17 +304,43 @@ if( sum(is.na(tab$valor)) < 2 ){
         paste0(paste0(tt$valor, "% considera "), tolower(tt$Descripción), collapse = " y " ), 
         "entre las tres problemáticas principales")
 }
+cat(frase, "\n")
 ```
 
-`r frase`.
+\subsubsection{6.2 Problemas de la colonia}
 
 
-6.2 Problemas de la colonia
+```{r, results='asis'}
+row_percepcion_fun <- function(row){
+  frase <- paste0(gsub("(^[[:alpha:]])", "\\U\\1", row$Descripción, perl=TRUE), 
+                  " ", row$valor, "% de los encuestados.")
+  frase
+}
+tab <- tab_envipe %>% 
+  filter(Tema == "problemas", 
+         Descripción %in% c("falta agua", "falta alumbrado", "baches o fugas de agua"))
+if(sum(is.na(tab$valor)) < nrow(tab)){
+  tab_in <- tab %>% 
+    na.omit %>% 
+    mutate(valor = round(100*valor)) %>% 
+    arrange(desc(valor))
+  lista_in <- tab_in %>% 
+    rowwise() %>% 
+    do(res = row_percepcion_fun(row = .)) %>% 
+    .$res
+  cat("Problemas que han tenido en la colonia:\n\n")  
+  for (i in 1:length(lista_in)){
+    cat("-", lista_in[[i]][1], "\n")
+    }
+}
+if(sum(is.na(tab$valor)) > 0){
+ cat("No hay información de este municipio sobre problemáticas locales relacionadas al desarrollo social.", "\n")  
+}
+```
+  
+  
 
-  - Baches o fugas de agua
-  - Falta de alumbrado público
-
-6.3 Infraestructura en servicios básicos (porcentaje de viviendas)
+\subsubsection{6.3 Infraestructura en servicios básicos (porcentaje de viviendas)}
 
   - Agua potable (DAVID: damus/bd_imunac_login::sb_agua_potable)
   - Almacenamiento de agua (DAVID: damus/bd_imunac_login::sb_almacenamiento_agua)
@@ -287,13 +352,17 @@ if( sum(is.na(tab$valor)) < 2 ){
   - Telecomunicaciones (DAVID: damus/bd_imunac_login::sb_telecomunicaciones)
   - Espacio suficiente (DAVID: damus/bd_imunac_login::sb_espacio)
 
-6.4 Porcentaje de hogares por encima de la línea de bienestar mínima (DAVID: src/indicadores_enigh.R   enigh2016mun::phog_arriba_lbm)
+\subsubsection{6.4 Porcentaje de hogares por encima de la línea de bienestar mínima.}
 
-## 7. Trabajo
+(DAVID: src/indicadores_enigh.R   enigh2016mun::phog_arriba_lbm)
 
-7.1 Percepción de la población sobre problemáticas principales en el municipio:  
+
+
+\subsection{7. Trabajo}
+
+\subsubsection{7.1 Percepción de la población sobre problemáticas principales en el municipio:}
   
-```{r}
+```{r, results='asis'}
 tab <- tab_envipe %>% 
   filter(Tema == "importancia", Descripción == "Desempleo")
 if( is.na(tab$valor)){
@@ -302,8 +371,10 @@ if( is.na(tab$valor)){
 if( !is.na(tab$valor)){
   frase <- paste("El", paste0(round(100*tab$valor), "%"), "considera desempleo como una de las tres principales problemáticas en el municipio")
 }
+cat(frase, "\n")
 ```
 
-`r frase`.
   
-7.2 Número de empleos por cada habitante en el municipio  (DAVID: damus/bd_imunac_login::dt_empleo_uso_suelo)
+\subsubsection{7.2 Número de empleos por cada habitante en el municipio.}
+
+(DAVID: damus/bd_imunac_login::dt_empleo_uso_suelo)
