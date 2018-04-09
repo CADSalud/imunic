@@ -66,7 +66,17 @@ comp_jovenes <- case_when(
 \subsection{1. Población general:}
 
 
-El municipio tiene una población de **`r format_fun(tab_interc$pob_total)`** personas y **`r format_fun(tab_enigh$hogares)`** hogares.  
+```{r, results='asis'}
+frase1 <- paste0("El municipio tiene una población de **", format_fun(tab_interc$pob_total), "** personas")
+if( is.na(tab_enigh$hogares)){
+  frase2 <- paste0(".")
+}
+if( !is.na(tab_enigh$hogares)){
+  frase2 <- paste0(" y **", format_fun(tab_enigh$hogares), "** hogares.")
+}
+cat(frase1, frase2)
+```
+
 
 El **`r round(100*tab_interc$pob_mujeres/tab_interc$pob_total)`%** son mujeres. Es decir, por cada 100 hombres en el municipio hay `r round(100*tab_interc$pob_mujeres/tab_interc$pob_hombres)` mujeres. 
 
