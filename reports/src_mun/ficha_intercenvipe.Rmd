@@ -16,6 +16,7 @@ header-includes:
   - \lfoot{\thepage}
   - \cfoot{}
   - \rfoot{\includegraphics[width=1.5cm]{logo-CAD.png}} 
+  - \definecolor{blue4}{HTML}{E5D0D7} 
 ---
 
 
@@ -25,29 +26,35 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 library(tidyverse)
 
 # Municipios
-source("run_reports.R")
+source("funciones_datos.R")
+source("vector_municipio.R")
 
-# municipios_selec <- c("Sultepec","Texcaltitlán", "Almoloya de Alquisiras")
-# municipios_selec <- c("Álvaro Obregón", 9)
-# municipios_selec <- c("Cuajimalpa de Morelos", 9)
-# municipios_selec <- c("Sultepec", 15)
-# municipios_selec <- c("Texcaltitlán", 15)
-# municipios_selec <- c("Jilotepec", 30)
-municipios_selec <- c("Chumatlán", 30)
-tablas_l <- tablas_load_fun(municipios_selec = municipios_selec[1], 
-                            state_code_selec = municipios_selec[2])
+
+# municipios_selec_vec <- c("Álvaro Obregón", 9)
+# municipios_selec_vec <- c("Cuajimalpa de Morelos", 9)
+# municipios_selec_vec <- c("Sultepec", 15)
+# municipios_selec_vec <- c("Texcaltitlán", 15)
+# municipios_selec_vec <- c("Jilotepec", 30)
+# municipios_selec_vec <- c("Chumatlán", 30)
+# municipios_selec_vec <- c("San José del Rincón", 15)
+tablas_l <- tablas_load_fun(municipios_selec = municipios_selec_vec[1], 
+                            state_code_selec = municipios_selec_vec[2])
 format_fun <- function(vector){
   format(vector, big.mark=",",scientific=FALSE)  
 }
+
+# Tablas
+tab_interc <- tablas_l$tab_interc
+tab_estatal <- tablas_l$tab_estatal
+tab_envipe <- tablas_l$tab_envipe
+tab_enigh <- tablas_l$tab_enigh
+tab_damus <- tablas_l$tab_damus
 ```
 
 
 # Ficha contextual de datos sociodemográficos para `r paste(tablas_l$entidad$NOM_MUN)` - `r paste(tablas_l$entidad$NOM_ENT)` 
 
 ```{r}
-tab_interc <- tablas_l$tab_interc
-tab_estatal <- tablas_l$tab_estatal
-
 pob_16a35 <- tab_interc$pob_15o35
 
 pob_16a35_est <- tab_estatal$pob_15o35
@@ -65,35 +72,27 @@ comp_jovenes <- case_when(
 
 \subsection{1. Población general:}
 
-El municipio tiene una población de **`r format_fun(tab_interc$pob_total)`** personas. Donde el `r round(100*tab_interc$pob_mujeres/tab_interc$pob_total)`% son mujeres. Es decir, por cada hombre en el municipio hay `r round(tab_interc$pob_mujeres/tab_interc$pob_hombres, 1)` mujeres. 
 
-Hay `r format_fun(pob_16a35)` jóvenes entre 15 y 35 años.
+El municipio tiene una población de **`r format_fun(tab_interc$pob_total)`** personas y **`r format_fun(tab_enigh$hogares)`** hogares.  
+
+El **`r round(100*tab_interc$pob_mujeres/tab_interc$pob_total)`%** son mujeres. Es decir, por cada 100 hombres en el municipio hay `r round(100*tab_interc$pob_mujeres/tab_interc$pob_hombres)` mujeres. 
+
+Hay **`r format_fun(pob_16a35)` jóvenes entre 15 y 35 años**.
 Esto representa el `r jovenes_mun`% de la población del municipio. `r paste(comp_jovenes)`
 a la proporción en la entidad (`r jovenes_est`%).
 
-```{r}
-comp_ingreso <- case_when(
-  tab_interc$ingreso_q50 >  tablas_l$tab_ingreso_ent$ingreso_q50 ~ "mayor",
-  tab_interc$ingreso_q50 == tablas_l$tab_ingreso_ent$ingreso_q50 ~ "igual",
-  tab_interc$ingreso_q50 <  tablas_l$tab_ingreso_ent$ingreso_q50 ~ "menor")
-```
-
-El 50% de la población gana \$`r format_fun(round(tab_interc$ingreso_q50))` o menos al mes. Esto es `r paste(comp_ingreso)` al valor estatal \$`r format_fun(round(tablas_l$tab_ingreso_ent$ingreso_q50))`.
-
-
-```{r}
-frase <-  ""
-if(tab_interc$ingreso_q25 > 0){
-  frase <- paste0("Esto representa aproximadamente ",
-                  round(tab_interc$ingreso_q75/tab_interc$ingreso_q25), 
-                  " veces el nivel bajo en el alto. A nivel estatal es aproximadamente ", 
-                  round(tablas_l$tab_ingreso_ent$ingreso_q75/tablas_l$tab_ingreso_ent$ingreso_q25), 
-                  " veces.") 
+```{r, results='asis'}
+tab <- tab_envipe %>% 
+  filter(Tema == "importancia") %>% 
+  na.omit() %>% 
+  arrange(desc(valor))
+if(nrow(tab) > 0){
+  frase <- paste0("El tema que mayor preocupación genera en este municipio es **", tolower(tab$Descripción[1]), "** según el ", round(100*tab$valor[1]), "% de los entrevistados.")
+  cat(frase, "\n")
 }
 ```
 
 
-La diferencia entre el ingreso por persona del 25% más bajo y el 75% más alto es de `r format_fun(round(tab_interc$ingreso_q75 - tab_interc$ingreso_q25))`. `r frase`
 
 
 \subsubsection{1.1 Población vulnerable: }
@@ -108,17 +107,17 @@ comp_porc75 <- case_when(
 ```
 
 
-  - Hay `r format_fun(tab_interc$pob_mas75)` personas de 75 años o mas. Esto representa el `r porc75`% de la población del municipio. Esto es `r comp_porc75` que el `r porc75est`% observado en la entidad. Esta población representa el `r round(100*tab_interc$pob_mas75/tab_estatal$pob_mas75, 1)`% de los mayores de 75 años en el estado.
+  - Hay **`r format_fun(tab_interc$pob_mas75)` personas de 75 años o mas**. Esto representa el `r porc75`% de la población del municipio. Que es `r comp_porc75` que el `r porc75est`% observado en la entidad. En total representa el `r round(100*tab_interc$pob_mas75/tab_estatal$pob_mas75, 1)`% de los mayores de 75 años en el estado.
   
-  - Hay `r format_fun(tab_interc$pob_perte_indigena)` pertenecientes a la cultura indígena. Esto es el `r round(100*tab_interc$pob_perte_indigena/tab_interc$pob_total)`% de la población del municipio.
+  - Hay **`r format_fun(tab_interc$pob_perte_indigena)`** personas pertenecientes a la **cultura indígena**. Esto es el **`r round(100*tab_interc$pob_perte_indigena/tab_interc$pob_total)`%** de la población del municipio.
   
-  - Hay `r format_fun(tab_interc$pob_15mas_sinedubasica)` personas de 15 o más sin educación básica. Esto es el `r round(100*tab_interc$pob_15mas_sinedubasica/tab_interc$pob_15omas)`% de la población mayor de 15 años del municipio.
+  - Hay **`r format_fun(tab_interc$pob_15mas_sinedubasica)` personas de 15 o más sin educación básica**. Esto es el **`r round(100*tab_interc$pob_15mas_sinedubasica/tab_interc$pob_15omas)`%** de la población mayor de 15 años del municipio.
   
-  - Hay `r format_fun(tab_interc$madres_solteras)` madres solteras en el municipio. Esto es el `r round(100*tab_interc$madres_solteras/(tab_interc$madres_solteras + tab_interc$madres_nosolteras))`% de las madres del municipio. 
+  - Hay **`r format_fun(tab_interc$madres_solteras)` madres solteras en el municipio**. Esto es el **`r round(100*tab_interc$madres_solteras/(tab_interc$madres_solteras + tab_interc$madres_nosolteras))`%** de las madres del municipio. 
   
-  - Hay `r format_fun(tab_interc$amas_casa)` personas que se dedican a las labores del hogar sin recibir pago.
+  - Hay **`r format_fun(tab_interc$amas_casa)`** personas que se dedican a las **labores del hogar** sin recibir pago.
 
-  - Hay `r format_fun(tab_interc$incapacitado)` personas incapacitadas física o mentalmente para trabajar.
+  - Hay **`r format_fun(tab_interc$incapacitado)` personas incapacitadas** física o mentalmente para trabajar.
 
 
 
@@ -126,27 +125,24 @@ comp_porc75 <- case_when(
 
 \subsubsection{2.1 Percepción de la población sobre problemáticas principales en el municipio:  }
 
-```{r}
-tab_envipe <- tablas_l$tab_envipe
+```{r, results='asis'}
 tab <- tab_envipe %>% 
   filter(Tema == "importancia", Descripción == "Salud")
 if( is.na(tab$valor)){
   frase <- "Este municipio no tiene información sobre el ranking de salud como problemática principal"
 }
 if( !is.na(tab$valor)){
-  frase <- paste("El", paste0(round(100*tab$valor), "%"), "considera el tema salud como una de las tres principales problemáticas en el municipio")
+  frase <- paste("El", paste0( "**", round(100*tab$valor), "%**"), "considera el tema salud como una de las tres principales problemáticas en el municipio.")
 }
+cat(frase, "\n")
 ```
 
 
-`r paste(frase)`.
-  
-
 \subsubsection{2.2 Afiliación a servicios de salud:}
 
-  - El `r round(100*tab_interc$ind_prop_seguroimss)`% esta afiliado al IMSS.
-  - El `r round(100*tab_interc$ind_prop_seguropopu)`% esta afiliado al Seguro Popular. 
-  - El `r round(100*tab_interc$ind_prop_seguropriv)`% cuenta con seguro privado. 
+  - El **`r round(100*tab_interc$ind_prop_seguroimss)`%** esta afiliado al IMSS.
+  - El **`r round(100*tab_interc$ind_prop_seguropopu)`%** esta afiliado al Seguro Popular. 
+  - El **`r round(100*tab_interc$ind_prop_seguropriv)`%** cuenta con seguro privado. 
   
   
   
@@ -169,7 +165,8 @@ cat(frase_inseg, "\n")
 
 ```{r, results='asis'}
 tab <- tab_envipe %>% 
-  filter(Tema == "importancia", Descripción %in% c( "Narco", "Inseguridad", "Impunidad"))
+  filter(Tema == "importancia", 
+         Descripción %in% c( "Narco", "Inseguridad", "Impunidad"))
 if( sum(is.na(tab$valor)) == 3 ) {
   frase <- "Este municipio no tiene información sobre el ranking de problemáticas de seguridad"
 }
@@ -178,11 +175,13 @@ if( sum(is.na(tab$valor)) < 3 ){
   tt <- tab %>% 
     filter(!is.na(valor)) %>% 
     mutate(valor = round(100*valor)) %>% 
-    arrange(desc(valor))
+    arrange(desc(valor)) %>% 
+    mutate(Descripción = fct_recode(Descripción, 
+                                    `narcotráfico` = "Narco"))
   
-  frase <- paste("En el municipio el", 
-        paste0(paste0(tt$valor, "% considera "), tolower(tt$Descripción), collapse = ", " ), 
-        "entre las tres problemáticas principales")
+  frase <- paste("En el municipio el ", 
+        paste0(paste0("**", tt$valor, "%** considera "), tolower(tt$Descripción), collapse = ", " ), 
+        "entre las tres problemáticas principales.")
 }
 cat(frase, "\n")
 ```
@@ -195,7 +194,7 @@ cat(frase, "\n")
 
 ```{r, results='asis'}
 row_percepcion_fun <- function(row){
-  frase <- paste0("El ", row$valor, "% ", row$Descripción, "." )
+  frase <- paste0("**", row$valor, "%**: ", row$Descripción, "." )
   frase
 }
 tab <- tab_envipe %>% 
@@ -203,14 +202,14 @@ tab <- tab_envipe %>%
 if(sum(is.na(tab$valor)) < nrow(tab)){
   tab_in <- tab %>% 
     na.omit %>% 
-    filter(valor > .49) %>% 
+    filter(valor > .45) %>%
     mutate(valor = round(100*valor)) %>% 
     arrange(desc(valor))
   lista_in <- tab_in %>% 
     rowwise() %>% 
     do(res = row_percepcion_fun(row = .)) %>% 
     .$res
-  cat("En esta sección se presentan las problemáticas que más de la mayoría ha visto al rededor de su vivienda:\n\n")  
+  cat("En esta sección se presentan las problemáticas que los encuestados han visto al rededor de su vivienda:\n\n")  
   for (i in 1:length(lista_in)){
     cat("-", lista_in[[i]][1], "\n")
     }
@@ -233,7 +232,7 @@ if( is.na(tab$valor)){
   frase <- "Este municipio no tiene información sobre el ranking de aumento de precios como problemática principal"
 }
 if( !is.na(tab$valor)){
-  frase <- paste("El", paste0(round(100*tab$valor), "%"), "considera el aumento de precios como una de las tres principales problemáticas en el municipio")
+  frase <- paste("El", paste0("**", round(100*tab$valor), "%**"), "considera el aumento de precios como una de las tres principales problemáticas en el municipio")
 }
 cat(frase, "\n\n")
 ```
@@ -241,12 +240,53 @@ cat(frase, "\n\n")
 
 \subsubsection{4.2 Gasto trimestral promedio por concepto:}
 
-  - Salud (DAVID: src/indicadores_enigh.R   enigh2016mun::salud_prom)
-  - Educación (DAVID: src/indicadores_enigh.R   enigh2016mun::educ_prom)
+```{r}
+contraste_salud <- case_when(
+  tab_enigh$salud_prom >  tab_enigh$salud_prom_ent ~ paste("es", round(tab_enigh$salud_prom/tab_enigh$salud_prom_ent) ,"veces mayor"),
+  tab_enigh$salud_prom == tab_enigh$salud_prom_ent ~ "igual",
+  tab_enigh$salud_prom <  tab_enigh$salud_prom_ent ~ paste("es", round(tab_enigh$salud_prom_ent/tab_enigh$salud_prom) ,"veces menor"))
 
-\subsubsection{4.3 Ingreso trimetral del hogar promedio.} 
+contraste_educ <- case_when(
+  tab_enigh$educ_prom >  tab_enigh$educ_prom_ent ~ paste("es", round(tab_enigh$educ_prom/tab_enigh$educ_prom_ent) ,"veces mayor"),
+  tab_enigh$educ_prom == tab_enigh$educ_prom_ent ~ "igual",
+  tab_enigh$educ_prom <  tab_enigh$educ_prom_ent ~ paste("es", round(tab_enigh$educ_prom_ent/tab_enigh$educ_prom) ,"veces menor"))
 
-(DAVID: src/indicadores_enigh.R   enigh2016mun::ingr_prom)
+contraste_ingr <- case_when(
+  tab_enigh$ingr_prom >  tab_enigh$ingr_prom_ent ~ "mayor",
+  tab_enigh$ingr_prom == tab_enigh$ingr_prom_ent ~ "igual",
+  tab_enigh$ingr_prom <  tab_enigh$ingr_prom_ent ~ "menor")
+```
+
+
+
+  - El **gasto promedio en salud** por hogar del municipio es **\$`r format_fun(round(tab_enigh$salud_prom))`**. En contraste con el promedio estatal \$`r format_fun(round(tab_enigh$salud_prom_ent))` `r contraste_salud`.
+
+  - El **gasto promedio en educación** por hogar del municipio es **\$`r format_fun(round(tab_enigh$educ_prom))`**. En contraste con el promedio estatal \$`r format_fun(round(tab_enigh$educ_prom_ent))` `r contraste_educ`.
+
+
+
+
+\subsubsection{4.3 Ingreso trimestral del hogar promedio.} 
+
+  - El **ingreso promedio trimestral por hogar** del municipio es \$`r format_fun(round(tab_enigh$ingr_prom))`. En contraste con el promedio estatal \$`r format_fun(round(tab_enigh$ingr_prom_ent))` es `r contraste_ingr`.
+
+```{r}
+comp_ingreso <- case_when(
+  tab_interc$ingreso_q50 >  tablas_l$tab_ingreso_ent$ingreso_q50 ~ "mayor",
+  tab_interc$ingreso_q50 == tablas_l$tab_ingreso_ent$ingreso_q50 ~ "igual",
+  tab_interc$ingreso_q50 <  tablas_l$tab_ingreso_ent$ingreso_q50 ~ "menor")
+frase <-  ""
+if(tab_interc$ingreso_q25 > 0){
+  frase <- paste0("Esto representa aproximadamente ",
+                  round(tab_interc$ingreso_q75/tab_interc$ingreso_q25), 
+                  " veces el nivel bajo en el alto. A nivel estatal es aproximadamente ", 
+                  round(tablas_l$tab_ingreso_ent$ingreso_q75/tablas_l$tab_ingreso_ent$ingreso_q25), 
+                  " veces.") 
+}
+```
+
+- El 50% de la población tiene un **ingreso mensual promedio** de  **\$`r format_fun(round(tab_interc$ingreso_q50))` o menos**. Esto es `r paste(comp_ingreso)` al valor estatal \$`r format_fun(round(tablas_l$tab_ingreso_ent$ingreso_q50))`. La diferencia entre el ingreso por persona del 25% más bajo y el 75% más alto es de `r format_fun(round(tab_interc$ingreso_q75 - tab_interc$ingreso_q25))`. `r frase`
+
 
 
 
@@ -261,7 +301,7 @@ if( is.na(tab$valor)){
   frase <- "Este municipio no tiene información sobre el ranking de educación como problemática principal"
 }
 if( !is.na(tab$valor)){
-  frase <- paste("El", paste0(round(100*tab$valor), "%"), "considera educación como una de las tres principales problemáticas en el municipio")
+  frase <- paste("El", paste0("**", round(100*tab$valor), "%**"), "considera educación como una de las tres principales problemáticas en el municipio")
 }
 cat(frase, "\n")
 ```
@@ -271,11 +311,11 @@ cat(frase, "\n")
 
 ```{r, results='asis'}
 frases_l <- list(
-  paste0("El ", round(100*tab_interc$ind_prop_preesc), "% de los niños entre 3 y 5 años asisten a preescolar."),
-  paste0("El ", round(100*tab_interc$ind_prop_primar), "% de los niños entre 6 y 12 años asisten a primaria."),
-  paste0("El ", round(100*tab_interc$ind_prop_secund), "% de los niños entre 13 y 15 años asisten a secundaria."),
-  paste0("El ", round(100*tab_interc$ind_prop_prepar), "% de los jóvenes entre 16 y 18 años asisten a preparatoria."),
-  paste0("El ", round(100*tab_interc$ind_prop_univer), "% de los jóvenes entre 19 y 26 años asisten a universidad.")
+  paste0("El **", round(100*tab_interc$ind_prop_preesc), "%** de los niños entre **3 y 5 años** asisten a preescolar."),
+  paste0("El **", round(100*tab_interc$ind_prop_primar), "%** de los niños entre **6 y 12 años** asisten a primaria."),
+  paste0("El **", round(100*tab_interc$ind_prop_secund), "%** de los niños entre **13 y 15 años** asisten a secundaria."),
+  paste0("El **", round(100*tab_interc$ind_prop_prepar), "%** de los jóvenes entre **16 y 18 años** asisten a preparatoria."),
+  paste0("El **", round(100*tab_interc$ind_prop_univer), "%** de los jóvenes entre **19 y 26 años** asisten a universidad.")
 )
 for(i in 1:length(frases_l)){
   cat("-", frases_l[[i]][[1]], "\n")
@@ -300,9 +340,9 @@ if( sum(is.na(tab$valor)) < 2 ){
     mutate(valor = round(100*valor)) %>% 
     arrange(desc(valor))
   
-  frase <- paste("En el municipio el", 
-        paste0(paste0(tt$valor, "% considera "), tolower(tt$Descripción), collapse = " y " ), 
-        "entre las tres problemáticas principales")
+  frase <- paste("En el municipio ", 
+        paste0(paste0("**", tt$valor, "%** considera "), tolower(tt$Descripción), collapse = " y " ), 
+        "entre las tres problemáticas principales.")
 }
 cat(frase, "\n")
 ```
@@ -313,7 +353,7 @@ cat(frase, "\n")
 ```{r, results='asis'}
 row_percepcion_fun <- function(row){
   frase <- paste0(gsub("(^[[:alpha:]])", "\\U\\1", row$Descripción, perl=TRUE), 
-                  " ", row$valor, "% de los encuestados.")
+                  ": **", row$valor, "%** de los encuestados.")
   frase
 }
 tab <- tab_envipe %>% 
@@ -342,20 +382,22 @@ if(sum(is.na(tab$valor)) > 0){
 
 \subsubsection{6.3 Infraestructura en servicios básicos (porcentaje de viviendas)}
 
-  - Agua potable (DAVID: damus/bd_imunac_login::sb_agua_potable)
-  - Almacenamiento de agua (DAVID: damus/bd_imunac_login::sb_almacenamiento_agua)
-  - Electricidad (DAVID: damus/bd_imunac_login::sb_electricidad)
-  - Combustible cocina (DAVID: damus/bd_imunac_login::sb_combustible_cocina)
-  - Material vivienda (DAVID: damus/bd_imunac_login::sb_material_vivienda)
-  - Saneamiento (DAVID: damus/bd_imunac_login::sb_saneamiento)
-  - Manejo de residuos (DAVID: damus/bd_imunac_login::sb_manejo_residuos)
-  - Telecomunicaciones (DAVID: damus/bd_imunac_login::sb_telecomunicaciones)
-  - Espacio suficiente (DAVID: damus/bd_imunac_login::sb_espacio)
 
+  - Agua potable: el **`r round(tab_damus$sb_agua_potable_mun)`%** de las viviendas en el municipio. *El promedio estatal es `r round(tab_damus$sb_agua_potable_proment)`%.*
+  - Almacenamiento de agua: el **`r round(tab_damus$sb_almacenamiento_agua_mun)`% de las viviendas en el municipio. El promedio estatal es `r round(tab_damus$sb_almacenamiento_agua_proment)`%.
+  - Electricidad: el **`r round(tab_damus$sb_electricidad_mun)`%** de las viviendas en el municipio. El promedio estatal es `r round(tab_damus$sb_electricidad_proment)`%. 
+  - Combustible cocina: el **`r round(tab_damus$sb_combustible_cocina_mun)`%** de las viviendas en el municipio. El promedio estatal es `r round(tab_damus$sb_combustible_cocina_proment)`%. 
+  - Material vivienda: el **`r round(tab_damus$sb_material_vivienda_mun)`%** de las viviendas en el municipio. El promedio estatal es `r round(tab_damus$sb_material_vivienda_proment)`%. 
+  - Saneamiento: el **`r round(tab_damus$sb_saneamiento_mun)`%** de las viviendas en el municipio. El promedio estatal es `r round(tab_damus$sb_saneamiento_proment)`%. 
+  - Manejo de residuos: el **`r round(tab_damus$sb_manejo_residuos_mun)`%** de las viviendas en el municipio. El promedio estatal es `r round(tab_damus$sb_manejo_residuos_proment)`%. 
+  - Telecomunicaciones: el **`r round(tab_damus$sb_telecomunicaciones_mun)`%** de las viviendas en el municipio. El promedio estatal es `r round(tab_damus$sb_telecomunicaciones_proment)`%. 
+  - Espacio suficiente: el **`r round(tab_damus$sb_espacio_mun)`%** de las viviendas en el municipio. El promedio estatal es `r round(tab_damus$sb_espacio_proment)`%. 
+  
+  
 \subsubsection{6.4 Porcentaje de hogares por encima de la línea de bienestar mínima.}
 
-(DAVID: src/indicadores_enigh.R   enigh2016mun::phog_arriba_lbm)
 
+El **`r round(100*tab_enigh$phog_arriba_lbm)`% de los hogares** en el municipio están por encima de la línea de bienestar mínima. El promedio estatal es de `r round(100*tab_enigh$phog_arriba_lbm_ent)`%.
 
 
 \subsection{7. Trabajo}
@@ -369,7 +411,7 @@ if( is.na(tab$valor)){
   frase <- "Este municipio no tiene información sobre el ranking de desempleo como problemática principal"
 }
 if( !is.na(tab$valor)){
-  frase <- paste("El", paste0(round(100*tab$valor), "%"), "considera desempleo como una de las tres principales problemáticas en el municipio")
+  frase <- paste("El", paste0("**", round(100*tab$valor), "%**"), "considera desempleo como una de las tres principales problemáticas en el municipio")
 }
 cat(frase, "\n")
 ```
@@ -377,4 +419,5 @@ cat(frase, "\n")
   
 \subsubsection{7.2 Número de empleos por cada habitante en el municipio.}
 
-(DAVID: damus/bd_imunac_login::dt_empleo_uso_suelo)
+
+En el municipio existen **`r round(100*tab_damus$dt_empleo_uso_suelo_mun)` empleos** por cada 100 habitantes. El promedio estatal es de `r format_fun(round(100*tab_damus$dt_empleo_uso_suelo_proment))` empleos por cada 100 habitantes.
