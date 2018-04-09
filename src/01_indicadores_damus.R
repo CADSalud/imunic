@@ -31,7 +31,8 @@ tab_damus_rmd <- imunac %>%
   mutate(proment = mean(mun)) %>% 
   gather(tpo, valor, c(mun, proment)) %>% 
   unite(indicadores, c(indicador, tpo)) %>% 
-  spread(indicadores, valor)
+  spread(indicadores, valor) %>% 
+  ungroup()
   
 tab_damus_rmd
 save(tab_damus_rmd, file = "cache/tab_damus_rmd.RData")
