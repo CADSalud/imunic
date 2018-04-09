@@ -24,6 +24,7 @@ header-includes:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 library(tidyverse)
+library(forcats)
 
 # Municipios
 source("funciones_datos.R")
