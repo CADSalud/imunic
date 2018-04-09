@@ -309,7 +309,7 @@ if( !is.na(tab$valor)){
 cat(frase, "\n")
 ```
 
-\subsubsection{5.2 Proporción de población en edad de asisitir a la escuela:}
+\subsubsection{5.2 Proporción de población en edad de asistir a la escuela:}
 
 
 ```{r, results='asis'}
