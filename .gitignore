@@ -8,3 +8,6 @@ data/*.csv
 .Rproj.user
 .httr-oauth
 data/
+reports/src_mun/pdfs/*
+*.pdf
+*.numbers
