@@ -67,14 +67,14 @@ comp_jovenes <- case_when(
 
 
 ```{r, results='asis'}
-frase1 <- paste0("El municipio tiene una población de **", format_fun(tab_interc$pob_total), "** personas")
+frase1 <- paste0("El municipio tiene una población de **", format_fun(tab_interc$pob_total), "** personas.")
 if( is.na(tab_enigh$hogares)){
   frase2 <- paste0(".")
 }
 if( !is.na(tab_enigh$hogares)){
   frase2 <- paste0(" y **", format_fun(tab_enigh$hogares), "** hogares.")
 }
-cat(frase1, frase2)
+cat(frase1, "\n")
 ```
 
 
