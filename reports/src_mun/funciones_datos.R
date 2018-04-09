@@ -14,6 +14,7 @@
 tablas_load_fun <- function(municipios_selec, state_code_selec){
   require(tidyverse)
   require(here)
+  require(forcats)
   
   # Para cargar datos
   setwd(here("."))
@@ -38,11 +39,13 @@ tablas_load_fun <- function(municipios_selec, state_code_selec){
     right_join(tab_estmun_selec, 
                by = c("state_code", "mun_code"))
   
+  
   # Envipe
   load("cache/tab_union_indicadores.RData")
   tab_envipe <- tab_union_indicadores %>% 
+    # mutate(Descripción = fct_recode(Descripción, `Aumento de precios` = "Precios")) %>%
     right_join(tab_estmun_selec, 
-               by = c("state_code", "mun_code"))
+               by = c("state_code", "mun_code")) 
   
   
   # Intercensal
