@@ -29,14 +29,6 @@ library(tidyverse)
 source("funciones_datos.R")
 source("vector_municipio.R")
 
-
-# municipios_selec_vec <- c("Álvaro Obregón", 9)
-# municipios_selec_vec <- c("Cuajimalpa de Morelos", 9)
-# municipios_selec_vec <- c("Sultepec", 15)
-# municipios_selec_vec <- c("Texcaltitlán", 15)
-# municipios_selec_vec <- c("Jilotepec", 30)
-# municipios_selec_vec <- c("Chumatlán", 30)
-# municipios_selec_vec <- c("San José del Rincón", 15)
 tablas_l <- tablas_load_fun(municipios_selec = municipios_selec_vec[1], 
                             state_code_selec = municipios_selec_vec[2])
 format_fun <- function(vector){
@@ -79,7 +71,7 @@ El **`r round(100*tab_interc$pob_mujeres/tab_interc$pob_total)`%** son mujeres. 
 
 Hay **`r format_fun(pob_16a35)` jóvenes entre 15 y 35 años**.
 Esto representa el `r jovenes_mun`% de la población del municipio. `r paste(comp_jovenes)`
-a la proporción en la entidad (`r jovenes_est`%).
+a la proporción en la entidad `r jovenes_est`%.
 
 ```{r, results='asis'}
 tab <- tab_envipe %>% 
