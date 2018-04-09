@@ -5,8 +5,17 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+
+# Municipios
+source("src_mun/run_reports.R")
+
+municipios_selec <- c("Sultepec","Texcaltitlán", "Almoloya de Alquisiras")
+tablas_l <- tablas_load_fun(municipios_selec = municipios_selec)
 ```
+
+
 
 ## 1. Sociodemográficos
 

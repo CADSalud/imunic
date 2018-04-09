@@ -8,9 +8,6 @@ library(rmarkdown)
 
 
 
-
-
-
 # Funcion generadora de reportes
 pdf_report_fun <- function(ent_code, munc_code){
   load("cache/tab_cods_estmun.RData")
@@ -39,14 +36,15 @@ pdf_report_fun <- function(ent_code, munc_code){
   "fin"
 }
 
-pdf_report_fun(ent_code = 15, munc_code = 2)
-pdf_report_fun(ent_code = 9, munc_code = 10)
-pdf_report_fun(ent_code = 9, munc_code = 4)
+# pdf_report_fun(ent_code = 15, munc_code = 74)
+# pdf_report_fun(ent_code = 9, munc_code = 10)
+# pdf_report_fun(ent_code = 9, munc_code = 4)
 
 
 
 # Excel de gira mañana --- 
 read_csv('docs/homologadora_edomex_muns.csv') %>% 
+  # filter(Fecha == "Miercoles 11 de Abril") %>% 
   filter(Fecha == "Martes 10 de Abril") %>% 
   rowwise() %>%
   do(pdf_report_fun(ent_code = .$state_code, munc_code = .$mun_code))
