@@ -11,13 +11,16 @@ mxmunicipio.map$region %>% n_distinct()
 mxmunicipio.map$id %>% n_distinct()
 tab_delitos_u %>% nrow()
 
+tab_delitos <- tab_delitos_u %>%  
+  spread(indicador, value)
+
+
 # union con mapa ----
 tab_gg <- mxmunicipio.map %>% 
   as.tibble() %>% 
   mutate(state_code = parse_number(str_sub(id, 1, 2)), 
          mun_code = parse_number(str_sub(id, 3, 5)) ) %>% 
-  left_join(tab_delitos_u, 
-            spread(indicador, value), 
+  left_join(tab_delitos, 
             by = c("state_code", "mun_code"))
 tab_gg
 
@@ -29,7 +32,7 @@ tab_gg %>%
   geom_polygon(aes(x = long, 
                    y = lat,
                    group = group, 
-                   fill = prop_seguridad),  
+                   fill = value),  
                color = "white", 
                size = .01)
 

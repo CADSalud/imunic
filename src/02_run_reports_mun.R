@@ -44,8 +44,11 @@ pdf_report_fun <- function(ent_code, munc_code){
 
 # Excel de gira mañana --- 
 read_csv('docs/homologadora_edomex_muns.csv') %>% 
-  # filter(Fecha == "Miercoles 11 de Abril") %>% 
-  filter(Fecha == "Martes 10 de Abril") %>% 
+  filter(Fecha == "Miercoles 11 de Abril") %>%
+  # filter(Fecha == "Martes 10 de Abril") %>% 
   rowwise() %>%
   do(pdf_report_fun(ent_code = .$state_code, munc_code = .$mun_code))
 
+tab_cods_estmun %>% 
+  filter(state_code == 15) %>% 
+  filter(str_detect(NOM_MUN, "Tec"))

@@ -65,3 +65,7 @@ tab_intercensal_rmd <- inds_list %>%
 tab_intercensal_rmd
 
 cache("tab_intercensal_rmd")
+
+
+
+
