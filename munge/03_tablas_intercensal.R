@@ -255,6 +255,9 @@ inds_list$`pob_otrostrabajo` <- tab %>%
          INGTRMEN = ifelse(INGTRMEN == '999999', NA, parse_number(INGTRMEN)),
          amas_casa = CONACT %in% c(33),
          incapacitado = CONACT %in% c(34),
+         econom_ocupado = CONACT %in% c(10:16),
+         econom_desocup = CONACT %in% c(20),
+         econom_notrabajo = CONACT %in% c(35),
          estudiante = CONACT %in% c(31)) %>% 
   gather(indicadores, value, amas_casa:estudiante) %>% 
   filter(value) %>% 
@@ -319,6 +322,51 @@ pob_trabajaingreso_ent
 cache("pob_trabajaingreso_ent")
 
 
+
+# Trabajo jovenes ----
+qry <- paste0( "SELECT ENT, MUN, COBERTURA, CONACT, sum(FACTOR), count(FACTOR) ",
+              "FROM [imunic-196018:intercensal.persona_append] WHERE EDAD in (",
+              paste("'", 15:24, "'", sep = "", collapse = ","),
+              ") GROUP BY ENT, MUN, COBERTURA, CONACT")
+tab <- query_exec(qry, project = "imunic-196018", max_pages = Inf) %>% 
+  as_tibble() %>% 
+  rename(n_facexp = f0_,
+         n = f1_) 
+
+inds_list$`pob_jovenestrabajo` <- tab %>% 
+  mutate(CONACT = parse_number(CONACT), 
+         jov_acteco_hogar = CONACT %in% c(33),
+         jov_acteco_incap = CONACT %in% c(34),
+         jov_acteco_ocupado = CONACT %in% c(10:16),
+         jov_acteco_desocup = CONACT %in% c(20),
+         jov_acteco_notrabajo = CONACT %in% c(35),
+         jov_acteco_estud = CONACT %in% c(31)) %>% 
+  gather(indicadores, value, jov_acteco_hogar:jov_acteco_estud) %>% 
+  filter(value) %>% 
+  group_by(ENT, MUN, COBERTURA, indicadores) %>% 
+  summarise(valor = sum(n_facexp))
+inds_list$`pob_jovenestrabajo`
+
+
+# Población de jovenes onu 15 a 24 ----
+qry <- paste0( "SELECT ENT, MUN, COBERTURA, sum(FACTOR), count(FACTOR) ",
+               "FROM [imunic-196018:intercensal.persona_append] WHERE EDAD in (",
+               paste("'", 15:24, "'", sep = "", collapse = ","),
+               ") GROUP BY ENT, MUN, COBERTURA")
+tab <- query_exec(qry, project = "imunic-196018", max_pages = Inf) %>% 
+  as_tibble() %>% 
+  rename(n_facexp = f0_,
+         n = f1_) 
+
+inds_list$`pob_jovenes` <- tab %>% 
+  mutate(indicadores = 'pob_15a24', 
+         valor = n_facexp) %>% 
+  dplyr::select(-n_facexp, -n)
+inds_list$`pob_jovenes`
+
+
+
+
 # población mayor de 12 años ----
 tab <- query_exec("SELECT ENT, MUN, COBERTURA, EDAD, sum(FACTOR), count(FACTOR) FROM [imunic-196018:intercensal.persona_append] GROUP BY ENT, MUN, COBERTURA, EDAD", project = "imunic-196018", max_pages = Inf) %>% 
   as_tibble() %>% 
@@ -336,12 +384,89 @@ inds_list$`pob_edadesespc` <- tab %>%
   gather(indicadores, valor, -c(ENT, MUN, COBERTURA))
 inds_list$`pob_edadesespc`
 
+
+# Linea de bienestar ----
+linea_bienestar <- readxl::read_xlsx("docs/Lineas_Bienestar_marzo2018.xlsx", 
+                                     sheet = "tabla", skip = 1, col_names = T) %>% 
+  gather(var, value, -c(year, mes)) %>% 
+  separate(col = var, into = c('linea', 'loc'), sep = "_") %>% 
+  group_by(year, linea, loc) %>% 
+  summarise(ing_prom = round(mean(value)) ) %>% 
+  ungroup
+linea_bienestar
+
+# linea de bienestar
+# qry <- paste0( "SELECT ENT, MUN, COBERTURA, TAMLOC, INGTRMEN, ",
+qry <- paste0( "SELECT ENT, MUN, COBERTURA, sum(FACTOR) as valor, ",
+               "(TAMLOC in ('1') and integer(INGTRMEN) < ",
+               filter(linea_bienestar, loc == "rural", linea == "b")$ing_prom,
+               ") or ",
+               "(TAMLOC in ('2', '3', '4', '5') and integer(INGTRMEN) < ",
+               filter(linea_bienestar, loc == "urbano", linea == "b")$ing_prom,
+               ") as LIN_BIEN ",
+               "FROM [imunic-196018:intercensal.persona_append] ",
+               "WHERE NOT INGTRMEN in ('999998') ",
+               "GROUP BY ENT, MUN, COBERTURA, LIN_BIEN")
+               # "LIMIT 10")
+tab <- query_exec(qry, project = "imunic-196018", max_pages = Inf) %>% 
+  as_tibble()
+tab
+
+inds_list$`pob_lineabien` <- tab %>% 
+  filter(LIN_BIEN == T) %>% 
+  mutate(indicadores = "pob_bajo_lineabien") %>% 
+  dplyr::select(-LIN_BIEN)
+inds_list$`pob_lineabien`
+
+
+# linea de bienestar minima
+qry <- paste0( "SELECT ENT, MUN, COBERTURA, sum(FACTOR) as valor, ",
+               "(TAMLOC in ('1') and integer(INGTRMEN) < ",
+               filter(linea_bienestar, loc == "rural", linea == "bm")$ing_prom,
+               ") or ",
+               "(TAMLOC in ('2', '3', '4', '5') and integer(INGTRMEN) < ",
+               filter(linea_bienestar, loc == "urbano", linea == "bm")$ing_prom,
+               ") as LIN_BIEN_MIN ",
+               "FROM [imunic-196018:intercensal.persona_append] ",
+               "WHERE NOT INGTRMEN in ('999998') ",
+               "GROUP BY ENT, MUN, COBERTURA, LIN_BIEN_MIN")
+tab <- query_exec(qry, project = "imunic-196018", max_pages = Inf) %>% 
+  as_tibble()
+tab
+
+inds_list$`pob_bajo_lineabienmin` <- tab %>% 
+  filter(LIN_BIEN_MIN == T) %>% 
+  mutate(indicadores = "pob_bajo_lineabienmin") %>% 
+  dplyr::select(-LIN_BIEN_MIN)
+inds_list$`pob_bajo_lineabienmin`
+
+
+
+
+
+
+
 # guardar ----
 names(inds_list)
-length(inds_list) # 17
+length(inds_list) # 21
 
 cache("inds_list")
 
 sapply(inds_list, dim)
 
+
+
+
+# Vivienda ----
+
+query_exec("SELECT * FROM [imunic-196018:intercensal.vivienda_append] LIMIT 3",
+           project = "imunic-196018")
+
+
+tab <- query_exec("SELECT ENT, MUN, COBERTURA, DHSERSAL1, DHSERSAL2, sum(FACTOR), count(FACTOR) FROM [imunic-196018:intercensal.persona_append] GROUP BY ENT, MUN, COBERTURA, DHSERSAL1, DHSERSAL2",
+                  project = "imunic-196018") %>% 
+  as_tibble() %>% 
+  rename(n_facexp = f0_,
+         n = f1_)
+tab %>% head()
 
