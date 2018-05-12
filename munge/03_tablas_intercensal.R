@@ -443,6 +443,18 @@ inds_list$`pob_bajo_lineabienmin`
 
 
 
+# Ocupación policias ----
+# qry <- paste0( "SELECT ENT_PAIS_TRAB, MUN_TRAB, OCUPACION_C, sum(FACTOR) as valor, ",
+qry <- paste0( "SELECT ACTIVIDADES_C, OCUPACION_C, sum(FACTOR) as valor, ",
+               "FROM [imunic-196018:intercensal.persona_append] ",
+               "WHERE OCUPACION_C in ('531') ",
+               "and  (ACTIVIDADES_C in ('9312','9313', '9314', '9319')) ",
+               "GROUP BY ACTIVIDADES_C,  OCUPACION_C")
+tab <- query_exec(qry, project = "imunic-196018", max_pages = Inf) %>% 
+  as_tibble()
+tab
+tab$valor %>% sum()
+
 
 
 
