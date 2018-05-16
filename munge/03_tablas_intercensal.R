@@ -445,22 +445,31 @@ inds_list$`pob_bajo_lineabienmin`
 
 # Ocupación policias ----
 # qry <- paste0( "SELECT ENT_PAIS_TRAB, MUN_TRAB, OCUPACION_C, sum(FACTOR) as valor, ",
-qry <- paste0( "SELECT ACTIVIDADES_C, OCUPACION_C, sum(FACTOR) as valor, ",
+qry <- paste0( "SELECT ENT_PAIS_TRAB, MUN_TRAB, sum(FACTOR) as valor, ",
                "FROM [imunic-196018:intercensal.persona_append] ",
                "WHERE OCUPACION_C in ('531') ",
-               "and  (ACTIVIDADES_C in ('9312','9313', '9314', '9319')) ",
-               "GROUP BY ACTIVIDADES_C,  OCUPACION_C")
+               # "and  (ACTIVIDADES_C in ('9312','9313', '9314')) ",
+               "and  (ACTIVIDADES_C in ('9313', '9314')) ",
+               "GROUP BY ENT_PAIS_TRAB, MUN_TRAB")
 tab <- query_exec(qry, project = "imunic-196018", max_pages = Inf) %>% 
-  as_tibble()
+  as_tibble() %>% 
+  filter(str_sub(ENT_PAIS_TRAB, 1, 1) == "0",
+         MUN_TRAB != "999")
 tab
 tab$valor %>% sum()
 
+inds_list$`trab_seguridad_pub` <- tab %>% 
+  rename(ENT = ENT_PAIS_TRAB, 
+         MUN = MUN_TRAB) %>% 
+  mutate(indicadores = "trab_seguridad_pub", 
+         ENT = str_sub(ENT, 2, 3))
+inds_list$`trab_seguridad_pub`
 
 
 
 # guardar ----
 names(inds_list)
-length(inds_list) # 21
+length(inds_list) # 22
 
 cache("inds_list")
 
