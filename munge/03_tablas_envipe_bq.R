@@ -3,6 +3,9 @@ library(tidyverse)
 library(bigrquery)
 
 
+
+
+
 # variables----
 doc_vars <- read_csv("docs/envipe_variables_tiempo.csv") %>% 
   gather(year, pregunta, `2013`:`2016`)
@@ -146,3 +149,25 @@ tab_pvic2 <- tab_pvic2_l %>%
   ungroup
 
 cache("tab_pvic2")
+
+
+
+# Tabla percepcion ----
+variables_selec <- c("percepción_pandillerismo", 
+  "percepción_venta droga", 
+  "percepción_robos asaltos",
+  "percepción_policia vs ciudadanos")#,
+  # "problemas_pandillerismo violento",
+  # "importancia_Narco",
+  # "importancia_Desempleo",
+  # "importancia_Impunidad")
+
+
+tab_vars <- doc_vars %>% 
+  filter(year == 2016) %>% 
+  unite(variable, c(Tema, Descripción), sep = "_") %>% 
+  filter(variable %in% variables_selec)
+
+
+
+
