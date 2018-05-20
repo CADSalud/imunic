@@ -9,9 +9,11 @@ load("cache/inds_list.RData")
 # inds_list <- list()
 names(inds_list)
 
-query_exec("SELECT * FROM [imunic-196018:intercensal.persona_append] LIMIT 3",
-           project = "imunic-196018")
+query_exec("SELECT sum(FACTOR) as valor FROM [imunic-196018:intercensal.persona_append]", project = "imunic-196018")
+# 119,530,753
 
+query_exec("SELECT sum(FACTOR) as valor FROM [imunic-196018:intercensal.vivienda_append]", project = "imunic-196018")
+# 32,844,866
 
 
 
@@ -395,51 +397,84 @@ linea_bienestar <- readxl::read_xlsx("docs/Lineas_Bienestar_marzo2018.xlsx",
   ungroup
 linea_bienestar
 
-# linea de bienestar
-# qry <- paste0( "SELECT ENT, MUN, COBERTURA, TAMLOC, INGTRMEN, ",
-qry <- paste0( "SELECT ENT, MUN, COBERTURA, sum(FACTOR) as valor, ",
-               "(TAMLOC in ('1') and integer(INGTRMEN) < ",
+
+# línea de bienestar 
+qry <- paste0( "SELECT pers.ENT, pers.MUN, pers.COBERTURA, ",
+               "SUM(pers.FACTOR) AS valor, ",
+               "AVG(integer(vivi.INGTRHOG)/integer(vivi.NUMPERS)) AS prom, ",
+               "(vivi.TAMLOC in ('1') and ",
+               "integer(vivi.INGTRHOG)/integer(vivi.NUMPERS) < ",
                filter(linea_bienestar, loc == "rural", linea == "b")$ing_prom,
                ") or ",
-               "(TAMLOC in ('2', '3', '4', '5') and integer(INGTRMEN) < ",
+               "(vivi.TAMLOC in ('2', '3', '4', '5') and ", 
+               "integer(vivi.INGTRHOG)/integer(vivi.NUMPERS) < ",
                filter(linea_bienestar, loc == "urbano", linea == "b")$ing_prom,
                ") as LIN_BIEN ",
-               "FROM [imunic-196018:intercensal.persona_append] ",
-               "WHERE NOT INGTRMEN in ('999998') ",
-               "GROUP BY ENT, MUN, COBERTURA, LIN_BIEN")
-               # "LIMIT 10")
+               "FROM [imunic-196018:intercensal.vivienda_append] vivi ",
+               "JOIN [imunic-196018:intercensal.persona_append] pers ",
+               "ON vivi.ID_VIV = pers.ID_VIV " ,
+               "WHERE NOT vivi.INGTRHOG in ('999999') ",
+               "GROUP BY pers.ENT, pers.MUN, pers.COBERTURA, LIN_BIEN")
+qry
 tab <- query_exec(qry, project = "imunic-196018", max_pages = Inf) %>% 
   as_tibble()
 tab
 
+tab$valor %>% sum
+summary(tab)
+
 inds_list$`pob_lineabien` <- tab %>% 
-  filter(LIN_BIEN == T) %>% 
+  filter(LIN_BIEN) %>% 
+  rename(ENT = pers_ENT,
+         MUN = pers_MUN,
+         COBERTURA = pers_COBERTURA) %>% 
   mutate(indicadores = "pob_bajo_lineabien") %>% 
-  dplyr::select(-LIN_BIEN)
+  dplyr::select(ENT, MUN, COBERTURA, indicadores, valor)
 inds_list$`pob_lineabien`
 
 
+
 # linea de bienestar minima
-qry <- paste0( "SELECT ENT, MUN, COBERTURA, sum(FACTOR) as valor, ",
-               "(TAMLOC in ('1') and integer(INGTRMEN) < ",
+qry <- paste0( "SELECT pers.ENT, pers.MUN, pers.COBERTURA, ",
+               "SUM(pers.FACTOR) AS valor, ",
+               "AVG(integer(vivi.INGTRHOG)/integer(vivi.NUMPERS)) AS prom, ",
+               "(vivi.TAMLOC in ('1') and ",
+               "integer(vivi.INGTRHOG)/integer(vivi.NUMPERS) < ",
                filter(linea_bienestar, loc == "rural", linea == "bm")$ing_prom,
                ") or ",
-               "(TAMLOC in ('2', '3', '4', '5') and integer(INGTRMEN) < ",
+               "(vivi.TAMLOC in ('2', '3', '4', '5') and ", 
+               "integer(vivi.INGTRHOG)/integer(vivi.NUMPERS) < ",
                filter(linea_bienestar, loc == "urbano", linea == "bm")$ing_prom,
                ") as LIN_BIEN_MIN ",
-               "FROM [imunic-196018:intercensal.persona_append] ",
-               "WHERE NOT INGTRMEN in ('999998') ",
-               "GROUP BY ENT, MUN, COBERTURA, LIN_BIEN_MIN")
+               "FROM [imunic-196018:intercensal.vivienda_append] vivi ",
+               "JOIN [imunic-196018:intercensal.persona_append] pers ",
+               "ON vivi.ID_VIV = pers.ID_VIV " ,
+               "WHERE NOT vivi.INGTRHOG in ('999999') ",
+               "GROUP BY pers.ENT, pers.MUN, pers.COBERTURA, LIN_BIEN_MIN")
+qry
 tab <- query_exec(qry, project = "imunic-196018", max_pages = Inf) %>% 
   as_tibble()
 tab
 
+tab$valor %>% sum
+summary(tab)
+
+
 inds_list$`pob_bajo_lineabienmin` <- tab %>% 
-  filter(LIN_BIEN_MIN == T) %>% 
+  filter(LIN_BIEN_MIN) %>% 
+  rename(ENT = pers_ENT,
+         MUN = pers_MUN,
+         COBERTURA = pers_COBERTURA) %>% 
   mutate(indicadores = "pob_bajo_lineabienmin") %>% 
-  dplyr::select(-LIN_BIEN_MIN)
+  dplyr::select(ENT, MUN, COBERTURA, indicadores, valor)
 inds_list$`pob_bajo_lineabienmin`
 
+
+tab <- inds_list$`pob_bajo_lineabien` %>% 
+  select(-indicadores) %>% 
+  left_join(inds_list$`pob_bajo_lineabienmin` %>% 
+              rename(valor_min = valor) %>% 
+              select(-indicadores))
 
 
 
@@ -479,7 +514,6 @@ sapply(inds_list, dim)
 
 
 # Vivienda ----
-
 query_exec("SELECT * FROM [imunic-196018:intercensal.vivienda_append] LIMIT 3",
            project = "imunic-196018")
 
