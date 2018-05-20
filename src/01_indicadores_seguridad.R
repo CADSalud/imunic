@@ -11,6 +11,19 @@ tab_cods_estmun %>% head
 
 # Percepción estatal envipe ----
 load("cache/tab_pvic1.RData")
+doc_vars <- read_csv("docs/envipe_variables_tiempo.csv") %>% 
+  gather(year, pregunta, `2013`:`2016`)
+
+variables_selec <- c("percepción_pandillerismo", 
+                     "percepción_venta droga", 
+                     "percepción_robos asaltos",
+                     "percepción_policia vs ciudadanos", 
+                     "percepción_venta prods pirata")
+tab_vars <- doc_vars %>% 
+  filter(year == 2016) %>% 
+  unite(variable, c(Tema, Descripción), sep = "_") %>% 
+  filter(variable %in% variables_selec)
+
 tab_pvic1 %>% 
   filter(variable %in% tab_vars$pregunta, 
          year_file == 2017) %>% 
