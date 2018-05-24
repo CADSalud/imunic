@@ -1,0 +1,305 @@
+---
+title: "Indice Municipal de Inseguridad en la Calle"
+subtitle: "IMUNIC"
+output:
+  prettydoc::html_pretty:
+      number_sections: true
+      toc: true
+      toc_depth: 2
+      # theme: leonids
+      theme: hpstr
+      highlight: vignette
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, fig.align = "center", 
+                      fig.width = 4.5, fig.height = 4)
+load("../cache/tab_est.RData")
+load("../cache/tab_imp_vic.RData")
+library(tidyverse)
+library(ggcorrplot)
+library(ggrepel)
+theme_set(theme_minimal())
+```
+
+
+```{r, echo=FALSE}
+htmltools::img(src = knitr::image_uri("logo-CAD.png"), 
+               style = 'position:absolute; top:0; right:0; padding:30px;')
+```
+
+
+# Introducción
+
+
+
+----
+
+# Exploratorio Estatal
+
+## Víctimas de delitos en la calle
+
+```{r, fig.width=12, fig.height=6}
+tab_imp_vic %>%
+  filter(indicadores == "víctima persona_robo calle") %>%
+  ggplot(aes(x = year, y = valor_imp) ) +
+  geom_line() +
+  geom_point(aes(color = is.na(valor))) +
+  scale_color_manual(values = c("black", "red")) +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom") +
+  guides(color = guide_legend("Imputación")) +
+  scale_y_continuous(labels = function(x)x/1e3) +
+  xlab("Víctimas de robo en la calle (miles)") +
+  facet_wrap(~ENT, scales = "free", ncol = 8)
+```
+
+```{r, fig.width=12, fig.height=6}
+tab_imp_vic %>%
+  filter(indicadores == "víctima persona_agresión física") %>%
+  ggplot(aes(x = year, y = valor_imp) ) +
+  geom_line() +
+  geom_point(aes(color = is.na(valor))) +
+  scale_color_manual(values = c("black", "red")) +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom") +
+  guides(color = guide_legend("Imputación")) +
+  scale_y_continuous(labels = function(x)x/1e3) +
+  xlab("Víctimas de agresión física (miles)") +
+  facet_wrap(~ENT, scales = "free", ncol = 8)
+```
+
+```{r, fig.width=12, fig.height=6}
+tab_imp_vic %>%
+  filter(indicadores == "víctima persona_abuso sexual") %>%
+  ggplot(aes(x = year, y = valor_imp) ) +
+  geom_line() +
+  geom_point(aes(color = is.na(valor))) +
+  scale_color_manual(values = c("black", "red")) +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom") +
+  guides(color = guide_legend("Imputación")) +
+  scale_y_continuous(labels = function(x)x/1e3) +
+  xlab("Víctimas de abuso sexual (miles)") +
+  facet_wrap(~ENT, scales = "free", ncol = 8)
+```
+
+```{r, fig.width=12, fig.height=6}
+tab_imp_vic %>%
+  filter(indicadores == "víctima persona_violación sexual") %>%
+  ggplot(aes(x = year, y = valor_imp) ) +
+  geom_line() +
+  geom_point(aes(color = is.na(valor))) +
+  scale_color_manual(values = c("black", "red")) +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom") +
+  guides(color = guide_legend("Imputación")) +
+  scale_y_continuous(labels = function(x)x/1e3) +
+  xlab("Víctimas de violación sexual (miles)") +
+  facet_wrap(~ENT, scales = "free", ncol = 8)
+```
+
+```{r, fig.width=12, fig.height=6}
+tab_imp_vic %>%
+  filter(indicadores == "víctima persona_secuestro") %>%
+  ggplot(aes(x = year, y = valor_imp) ) +
+  geom_line() +
+  geom_point(aes(color = is.na(valor))) +
+  scale_color_manual(values = c("black", "red")) +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom") +
+  guides(color = guide_legend("Imputación")) +
+  scale_y_continuous(labels = function(x)x/1e3) +
+  xlab("Víctimas de secuestro (miles)") +
+  facet_wrap(~ENT, scales = "free", ncol = 8)
+```
+
+
+
+
+## Correlación entre delitos denunciados
+
+```{r}
+# Correlación entre delitos
+cor(tab_est %>%
+      dplyr::select(starts_with("im_vict_")) %>%
+      na.omit()) %>%
+  ggcorrplot(hc.order = TRUE,
+             type = "upper",
+             outline.col = "white", lab = T) +
+  theme(axis.text.x = element_text(angle = 90, vjust = .5)) +
+  ggtitle("Correlación entre delitos",
+          "ENVIPE 2015")
+```
+
+
+
+## Correlación de delitos denunciados
+
+```{r}
+# Correlación entre delitos
+tab <- tab_est %>%
+           dplyr::select(starts_with("im_secr_"))
+cor(tab) %>%
+  ggcorrplot(hc.order = TRUE,
+             type = "upper",
+             outline.col = "white",
+             lab = T) +
+  theme(axis.text.x = element_text(angle = 90, vjust = .5)) +
+  ggtitle("Correlación entre delitos",
+          "Secretariado 2015")
+```
+
+```{r, fig.width=9}
+gg_1 <- tab_est %>%
+  ggplot(aes(x = im_secr_robo_sv, y = im_secr_robo_cv) ) +
+  geom_text_repel(aes(label  = NOM_ENT),
+                  alpha = .3, size = 3) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F)
+
+gg_2 <- tab_est %>%
+  ggplot(aes(x = im_secr_robo_sv, y = im_secr_robo_cs) ) +
+  geom_text_repel(aes(label  = NOM_ENT),
+                  alpha = .3, size = 3) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, alpha = .3,
+              linetype = 2) +
+  geom_smooth(method = "lm", se = F)
+
+gridExtra::grid.arrange(gg_1, gg_2, nrow = 1)
+```
+
+
+```{r}
+tab_est %>%
+  ggplot(aes(x = im_secr_secuest, y = im_secr_robo_cv) ) +
+  geom_text_repel(aes(label  = NOM_ENT),
+                  alpha = .3, size = 3) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F)
+```
+
+
+
+```{r, fig.width=5, fig.height=4.5}
+vars_sel <- tidyselect::vars_select(names(tab_est), starts_with("im_vict"))
+cor_mat <- lapply(vars_sel, function(nom_var){
+  cor(tab_est %>%
+        dplyr::select(starts_with("im_secr_"),
+                      nom_var))[nom_var, ] %>%
+    reshape2::melt(na.rm = TRUE) %>%
+    rownames_to_column("secretariado") %>%
+    mutate(envipe = nom_var)
+  }) %>%
+  bind_rows()
+
+colors_manual <- viridis::plasma(n = 6)[c(2, 3, 6)]
+cor_mat %>%
+  filter(secretariado != envipe) %>%
+  ggplot(aes(x = secretariado, y = envipe, fill = value)) +
+  geom_tile(color = "gray") +
+  scale_fill_gradient2(low = colors_manual[1], high = colors_manual[3],
+                       mid = colors_manual[2], midpoint = 0,
+                       limit = c(-1, 1), name = "Corr") +
+  geom_text( aes(label = round(value, 2)) ) +
+  theme(axis.text.x = ggplot2::element_text(angle = 90, size = 12,
+                                            vjust = 1, hjust = 1),
+        axis.text.y = ggplot2::element_text(size = 12)) +
+  coord_fixed() +
+  xlab(NULL) + ylab(NULL) +
+  ggtitle( "Correlación de denuncias y delitos",
+           "Secretariado y ENVIPE 2015")
+```
+
+
+```{r, fig.width=9}
+gg_1 <- tab_est %>%
+  ggplot(aes(x = im_vict_robo, y = im_secr_robo_cv) ) +
+  geom_text_repel(aes(label  = NOM_ENT),
+                  alpha = .3, size = 3) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, alpha = .3,
+              linetype = 2) +
+  geom_smooth(method = "lm", se = F)
+
+gg_2 <- tab_est %>%
+  ggplot(aes(x = im_vict_secuest, y = im_secr_secuest) ) +
+  geom_text_repel(aes(label  = NOM_ENT),
+                  alpha = .3, size = 3) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, alpha = .3,
+              linetype = 2) +
+  geom_smooth(method = "lm", se = F)
+
+gridExtra::grid.arrange(gg_1, gg_2, nrow = 1)
+```
+
+
+
+## Delitos reportados y problemas vividos
+
+```{r, fig.width=5, fig.height=4.5}
+vars_sel <- tidyselect::vars_select(names(tab_est), starts_with("im_vict"))
+cor_mat <- lapply(vars_sel, function(nom_var){
+  cor(tab_est %>%
+        dplyr::select(starts_with("im_prob_"),
+                      nom_var))[nom_var, ] %>%
+    reshape2::melt(na.rm = TRUE) %>%
+    rownames_to_column("secretariado") %>%
+    mutate(envipe = nom_var)
+}) %>%
+  bind_rows()
+
+colors_manual <- viridis::plasma(n = 6)[c(2, 3, 6)]
+cor_mat %>%
+  filter(secretariado != envipe) %>%
+  ggplot(aes(x = secretariado, y = envipe, fill = value)) +
+  geom_tile(color = "gray") +
+  scale_fill_gradient2(low = colors_manual[1], high = colors_manual[3],
+                       mid = colors_manual[2], midpoint = 0,
+                       limit = c(-1, 1), name = "Corr") +
+  geom_text( aes(label = round(value, 2)) ) +
+  theme(axis.text.x = ggplot2::element_text(angle = 90, size = 12,
+                                            vjust = 1, hjust = 1),
+        axis.text.y = ggplot2::element_text(size = 12)) +
+  coord_fixed() +
+  xlab(NULL) + ylab(NULL) +
+  ggtitle( "Correlación de problemas y delitos",
+           "ENVIPE 2015")
+```
+
+
+
+
+## Delitos reportados y percepción
+
+
+
+
+
+
+
+
+
+## Delitos reportados y condiciones generales del estado
+
+
+
+
+
+
+----
+
+# Evaluación Estatal
+
+
+----
+
+# Imputación y suavizamiento espacial
+
+----
+
+# Construccion de índice de inseguridad en la calle
+
+----
