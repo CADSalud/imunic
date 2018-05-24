@@ -475,7 +475,9 @@ tab <- inds_list$`pob_bajo_lineabien` %>%
   left_join(inds_list$`pob_bajo_lineabienmin` %>% 
               rename(valor_min = valor) %>% 
               select(-indicadores))
-
+tab
+tab %>% 
+  filter(ENT == '09')
 
 
 # Ocupación policias ----

@@ -34,17 +34,37 @@ tab_secre_l <- lapply(2013:2016, function(year_num){
     summarise(count = sum(parse_number(count), na.rm = T)) %>% 
     ungroup
 })
-
+cache("tab_secre_l")
 
 
 tab_secre <- tab_secre_l %>% 
   bind_rows() %>% 
-  mutate(tipo = fct_recode(tipo, 
+  mutate(tipo = fct_recode(tipo,
                            `C/S VIOLENCIA` = 'CON VIOLENCIA',
-                           `C/S VIOLENCIA` = 'SIN VIOLENCIA') ) %>% 
+                           `C/S VIOLENCIA` = 'SIN VIOLENCIA') ) %>%
   filter(tipo != "CULPOSOS") %>% 
   group_by(state_code, mun_code, modalidad, tipo) %>% 
   summarise(total = sum(count, na.rm = T))
 tab_secre
-
 cache("tab_secre")
+
+
+tab_secre_inds <- tab_secre_l %>% 
+  bind_rows() %>% 
+  filter(modalidad %in% c("HOMICIDIOS", 
+                          "ROBO COMUN",
+                          "DELITOS SEXUALES (VIOLACION)",
+                          "PRIV. DE LA LIBERTAD (SECUESTRO)")) %>% 
+  filter(tipo != "CULPOSOS") %>% 
+  group_by(state_code, mun_code, modalidad, tipo) %>% 
+  summarise(total = sum(count, na.rm = T)) %>% 
+  ungroup %>% 
+  unite(indicadores, c(modalidad, tipo), sep = "_") %>% 
+  mutate(indicadores = fct_recode( 
+    factor(indicadores), 
+    `VIOLACION` = "DELITOS SEXUALES (VIOLACION)_VIOLACION",
+    `SECUESTRO` = "PRIV. DE LA LIBERTAD (SECUESTRO)_SECUESTRO")) %>% 
+  mutate(indicadores = str_to_lower(str_replace_all(indicadores, " ", "_")) )
+tab_secre_inds
+cache("tab_secre_inds")
+
