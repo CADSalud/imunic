@@ -401,7 +401,6 @@ linea_bienestar
 # línea de bienestar 
 qry <- paste0( "SELECT pers.ENT, pers.MUN, pers.COBERTURA, ",
                "SUM(pers.FACTOR) AS valor, ",
-               "AVG(integer(vivi.INGTRHOG)/integer(vivi.NUMPERS)) AS prom, ",
                "(vivi.TAMLOC in ('1') and ",
                "integer(vivi.INGTRHOG)/integer(vivi.NUMPERS) < ",
                filter(linea_bienestar, loc == "rural", linea == "b")$ing_prom,
