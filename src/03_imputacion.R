@@ -8,8 +8,8 @@ library(gstat)
 library(mi)
 library(bayesplot)
 library(automap)
-
-
+library(tmap)
+library(BayesXsrc)
 
 # Datos ----
 load("cache/tab_cods_estmun.RData")
@@ -85,17 +85,16 @@ mdf_data <- change(mdf_data,
               to = rep("logshift", 16) ) # no negativas
 show(mdf_data)
 
-
-imps_mi <- mi(mdf_data,
-              n.iter = 8,
-              n.chains = 3,
-              max.minutes = 10)
+# imps_mi <- mi(mdf_data,
+#               n.iter = 8,
+#               n.chains = 3,
+#               max.minutes = 10)
 show(imps_mi)
 
 round(mipply(imps_mi, mean, to.matrix = TRUE), 3)
 Rhats(imps_mi)
 mcmc_rhat(Rhats(imps_mi))
-imps_mi <- mi(imps_mi, n.iter = 8)
+# imps_mi <- mi(imps_mi, n.iter = 8)
 # cache("imps_mi")
 load("cache/imps_mi.RData")
 
@@ -135,6 +134,9 @@ tab_imp_res <- df_imps %>%
             by = c("mun_code", "state_code", "variable"))
 tab_imp_res
 
+# cache("tab_imp_res")
+load('cache/tab_imp_res.RData')
+
 vars_selec <- unique(tab_imp_res$variable)[grep(pattern = "im_prob|im_perc", 
                                                 unique(tab_imp_res$variable))]
 vars_selec
@@ -150,7 +152,7 @@ tab_imp_res %>%
 tab_imp_res %>% 
   filter( variable %in% vars_selec) %>% 
   gather(tipo, valor, c(mean, median, obs)) %>% 
-  filter(tipo %in% c("median", "obs")) %>% 
+  filter(tipo %in% c("mean", "obs")) %>% 
   ggplot(aes( x = valor, fill = tipo)) + 
   geom_histogram(bins = 25, position = "stack") + 
   facet_wrap(~variable, scales = "free") + 
@@ -172,7 +174,7 @@ tab_imp_res %>%
 tab_imp_res %>% 
   filter( variable %in% vars_selec) %>% 
   gather(tipo, valor, c(mean, median, obs)) %>% 
-  filter(tipo %in% c("median", "obs")) %>% 
+  filter(tipo %in% c("mean", "obs")) %>% 
   filter(variable == "im_perc_homicid") %>% 
   ggplot(aes( x = tipo, y = valor, 
               fill = tipo)) + 
@@ -193,7 +195,7 @@ tab <- tab_imp_res %>%
             q75 = quantile(valor, .75, na.rm = T)) %>% 
   ungroup %>% 
   gather(cuant, valor, prom:q75) %>% 
-  filter(tipo != "mean") %>% 
+  filter(tipo != "median") %>% 
   unite(tipo_cuant, c(tipo, cuant)) %>% 
   spread(tipo_cuant, valor) %>% 
   left_join(tab_cods_estmun %>% 
@@ -201,10 +203,10 @@ tab <- tab_imp_res %>%
               unique())
 
 tab %>% 
-  ggplot(aes(x = obs_median, y = median_median)) + 
+  ggplot(aes(x = obs_prom, y = mean_prom)) + 
   geom_abline(slope = 1, intercept = 0) + 
-  geom_errorbar(aes(ymin = median_q25, 
-                     ymax = median_q75), 
+  geom_errorbar(aes(ymin = mean_q25, 
+                     ymax = mean_q75), 
                  alpha = .3) + 
   geom_errorbarh(aes(xmin = obs_q25, 
                      xmax = obs_q75), 
@@ -216,18 +218,12 @@ tab %>%
 
 
 
-# cache("tab_imp_res")
-load('cache/tab_imp_res.RData')
-
-
-
-
 # 2. Kriging ----
-
 tab_krige <- tab_imp_res %>% 
   filter( variable %in% vars_selec) %>% 
-  dplyr::select(mun_code, state_code, variable, median) %>% 
-  spread(variable, median) %>% 
+  dplyr::select(mun_code, state_code, variable, mean) %>% 
+  mutate(variable = paste0("imp_", variable)) %>% 
+  spread(variable, mean) %>% 
   right_join(tab_cods_estmun %>% 
                dplyr::select(state_code, mun_code), 
              by = c("mun_code", "state_code")) %>% 
@@ -235,530 +231,136 @@ tab_krige <- tab_imp_res %>%
             by = c("mun_code", "state_code"))
 tab_krige
 
+# Mapas 
+names(tab_krige)
+im_shp_mun_rgdal <- im_shp_mun_rgdal %>% 
+  merge(tab_krige)
+im_shp_mun_rgdal@data %>% head()
+names(im_shp_mun_rgdal)
+
 # Shape polygon dataframe
 imp_shp <- im_shp_mun_rgdal
-imp_shp@data <- imp_shp@data %>% 
-  dplyr::select(state_code, mun_code)
-
-imp_shp <- imp_shp %>% 
-  merge(tab_krige)
+names(imp_shp)
 
 imp_shp@data %>% head()
 imp_shp@data %>% summary()
+class(imp_shp)
 
 imp_mun_nb <- poly2nb(imp_shp) # neighbor list muns
 imp_mun_centers <- coordinates(imp_shp) # mun centers
 
+# Shape points dataframe
+imp_shp_pts <- SpatialPointsDataFrame(imp_shp, data = imp_shp@data)
+
+# variable interpolacion
+names(imp_shp)
+col_name <- 'imp_im_perc_robos'
+
+# mapas
+tm_shape(imp_shp) +
+  tm_fill(col = str_replace(col_name, "imp_", ""),
+          style = "quantile") 
+tm_shape(imp_shp) +
+  tm_fill(col = col_name, 
+          style = "quantile", 
+          title.col = "Robos") + 
+  tm_bubbles(size = col_name, 
+             col = col_name,
+             style = "quantile", 
+             legend.size.show = FALSE, 
+             title.col = "Robos")
 
 
 # faltantes
-# names(imp_shp)[str_detect(names(imp_shp), "im_")]
-col_name <- 'im_perc_disparo'
-
 nas_vec <- is.na(imp_shp@data[, col_name])
 sum(nas_vec)
 sum(nas_vec)/length(nas_vec)
 
-# variograma de faltante sy no faltantes
-plot(variogram( as.formula(paste(col_name, "~ 1")), 
-                imp_shp[!nas_vec, ]))
-mod_vgm <- variogram(as.formula(paste(col_name, "~ long + lat")), 
-                     imp_shp[!nas_vec, ])
-plot(mod_vgm)
 
+# variograma de faltante sy no faltantes
+col_name <- 'imp_im_perc_robos'
+mod_vgm <- variogram(as.formula(paste("log(", col_name, ")", 
+                                      "~ long + lat")), 
+                     imp_shp_pts[!is.na(imp_shp_pts@data[, col_name]), ])
+plot(mod_vgm)
+head(mod_vgm)
+
+fit_vgm <- fit.variogram(mod_vgm, 
+                         model = vgm(psill = .9-.7, model = "Sph",
+                                     range = 5.5, nugget = .7))
+plot(mod_vgm, fit_vgm) 
 
 # auto krige
-mod_autok <- autoKrige(formula = im_perc_disparo ~ long + lat, 
-                       #as.formula(paste(col_name, "~ long + lat")),
-                       input_data = imp_shp[!nas_vec, ]#,
-                       # new_data  = imp_shp[nas_vec, ])
-)
+mod_autok <- autoKrige(formula = as.formula(paste("log(", col_name, 
+                                                  ") ~ long + lat")),
+                       # log(imp_im_perc_robos) ~ long + lat, 
+                       input_data = imp_shp_pts[!nas_vec, ],
+                       new_data  = imp_shp_pts[nas_vec, ])
+summary(mod_autok)
+plot(mod_autok)
+
+mod_autok %>% str
+mod_autok$krige_output@data %>% head
+
+imp_shp_pts@data %>% head
+kg_col_name <- paste0("kg_", col_name)
+
+imp_shp_pts@data[, kg_col_name] <- imp_shp_pts@data[, col_name]
+imp_shp_pts@data[nas_vec, kg_col_name] <- exp(mod_autok$krige_output@data$var1.pred)
+data_res <- imp_shp_pts@data %>% 
+  dplyr::select_('state_code', 'mun_code', kg_col_name)
 
 
 
 
+# auto krige function by colname 
+vars_imp <- imp_shp_pts@data %>% 
+  dplyr::select(starts_with("imp_")) %>% 
+  names()
+vars_imp
 
-
-
-
-
-# --------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-# ----------
-
-
-
-library(mxmaps)
-library(tmap)
-library(sp)
-library(spdep)
-library(gstat)
-library(automap)
-
-library(RColorBrewer)
-library(viridisLite)
-# library(R2BayesX)
-
-blups <- brewer.pal(9, "BuPu")
-vir <- viridis(9)
-mag <- magma(9)
-
-
-
-
-
-
-
-# 2. Graficas ----
-tm_shape(shp_mun_rgdal) +
-  tm_fill(col = "pob_perte_indigena") +
-  # tm_shape(shp_edo_rgdal) +
-  # tm_borders() +
-  # tm_text(text = "state_code") + #, col = "white", remove.overlap =T
-  tm_credits("Fuente: INEGI",
-             position = c("left", "bottom"))
-# save_tmap(filename = "graphs/tmap_inseguridad.png")
-
-
-# 3. Pruebas ----
-mun_centers <- coordinates(shp_mun_rgdal) # mun centers
-mun_nb <- poly2nb(shp_mun_rgdal) # neighbor list muns
-plot(mun_nb, mun_centers)
-
-mun_centers %>% head()
-mun_centers %>% dim()
-dim(mun_centers)
-
-# numero de observaciones
-shp_mun_rgdal$state_code %>% length()
-shp_mun_rgdal$mun_code %>% length()
-shp_mun_rgdal@data %>% dim
-sum(apply(!is.na(shp_mun_rgdal@data), 1, sum) == 0 ) # 0 renglones NA
-
-shp_mun_rgdal@polygons %>% length()
-shp_mun_rgdal@polygons[[1]] %>% str(max.level = 2)
-shp_mun_rgdal@plotOrder
-
-mun_centers %>% head()
-shp_mun_rgdal@data %>% head()
-
-
-
-
-# 4. Imputacion ----
-library(mi)
-library(bayesplot)
-
-# Análisis de faltantes
-df_data <- shp_mun_rgdal@data %>%
-  dplyr::select(mun_code, state_code,
-                estudiante:lat,
-                -prop_seguridad)
-class(df_data)
-head(df_data)
-dim(df_data)
-
-tab_coords <- coordinates(shp_mun_rgdal)  %>%
-  as_data_frame() %>%
-  mutate(CVEGEO = shp_mun_rgdal$CVEGEO) %>%
-  rename(long = V1, lat = V2)
-
-
-mdf_data <- missing_data.frame(df_data)
-show(mdf_data)
-summary(mdf_data)
-image(mdf_data)
-hist(mdf_data)
-
-
-# mdf_data <- change(mdf_data,
-#               y = c("estudiante", "pob_15mas_sinedubasica", "pob_perte_indigena",
-#                     "pob_seg_imss", "pob_seg_popular", "pob_trabaja"),
-#               what = "type",
-#               to = rep("count", 6))
-# 
-# mdf_data <- change(mdf_data,
-#               y = c("ingreso_q50",
-#                     "vichgr_desap_forzada", "vichgr_homicidio",
-#                     "vichgr_secuestro", "vicper_robo_calle_transporte"),
-#               what = "transformation",
-#               to = rep("logshift", 5) ) # no negativas
-
-imps_mi <- mi(mdf_data,
-              n.iter = 40,
-              n.chains = 4,
-              max.minutes = 10)
-show(imps_mi)
-round(mipply(imps_mi, mean, to.matrix = TRUE), 3)
-
-Rhats(imps_mi)
-mcmc_rhat(Rhats(imps_mi))
-imps_mi <- mi(imps_mi, n.iter = 5)
-
-plot(imps_mi)
-hist(imps_mi)
-image(imps_mi)
-summary(imps_mi)
-
-cache("imps_mi")
-
-
-
-analysis_miss <- pool(estudiante ~ pob_menos12 +
-                        long + lat,
-                 data = imps_mi,
-                 m = 5)
-display(analysis_miss)
-
-comp_imps_mi <- mi::complete(imps_mi, m = 4)
-summary(comp_imps_mi)
-str(comp_imps_mi)
-comp_imps_mi[[1]] %>% head
-comp_imps_mi[[3]] %>%
-  filter(state_code == 1, mun_code== 8)
-
-
-df_imps <- lapply(comp_imps_mi, function(sub){
-  sub %>%
-    select(mun_code, state_code, estudiante:vicper_robo_calle_transporte) %>%
-    gather(variable, value, estudiante:vicper_robo_calle_transporte) %>%
+kg_tbls_mod <- lapply(vars_imp, function(col_name){
+  print(col_name)
+  mod_autok <- autoKrige(formula = as.formula(paste("log(", col_name, 
+                                                    ") ~ long + lat")),
+                         input_data = imp_shp_pts[!nas_vec, ],
+                         new_data  = imp_shp_pts[nas_vec, ])
+  summary(mod_autok)
+  kg_col_name <- paste0("kg_", col_name)
+  
+  imp_shp_pts@data[, kg_col_name] <- 
+    imp_shp_pts@data[, col_name]
+  imp_shp_pts@data[nas_vec, kg_col_name] <- 
+    exp(mod_autok$krige_output@data$var1.pred)
+  data_res <- imp_shp_pts@data %>% 
+    dplyr::select_('state_code', 'mun_code', kg_col_name) %>% 
     as_tibble()
-  }) %>%
-  bind_rows() %>%
-  group_by(mun_code, state_code, variable) %>%
-  summarise(mean = mean(value),
-            median = median(value)) %>%
-  ungroup() %>%
-  left_join(comp_imps_mi[[1]] %>%
-              dplyr::select(state_code, mun_code, starts_with('missing')) %>%
-              gather(variable, value, -c(state_code, mun_code)) %>%
-              mutate(variable = str_replace_all(variable, "missing_", "")) %>%
-              as_tibble(),
-            by = c("mun_code", "state_code", "variable")) %>%
-  rename(missing_imp = value) %>%
-  mutate(missing_imp = fct_explicit_na( factor(missing_imp), "Sin faltantes") )
-df_imps
+  data_res
+})
+kg_tbls_mod %>% length()
+vars_imp %>% length()
 
-df_data_imp <- df_data %>%
-  select(mun_code, state_code, estudiante:vicper_robo_calle_transporte) %>%
-  gather(variable, value, estudiante:vicper_robo_calle_transporte) %>%
-  as_tibble() %>%
-  left_join(df_imps)
-
-filter(df_data_imp, mun_code == 8, state_code == 1)
+imp_shp_kg <- imp_shp %>% 
+  merge(kg_tbls_mod %>% 
+          reduce(.f = left_join,
+                 by = c("state_code", "mun_code")) ) 
+imp_shp_kg %>% head
+# cache("imp_shp_kg")
+load("cache/imp_shp_kg.RData")
 
 
+tm_shape(imp_shp_kg) +
+  tm_fill(col = "kg_imp_im_prob_robescu", 
+          style = "quantile")
 
-# Revisar
-
-
-
-
-
-# Datos Kriging ----
-imp_shp <- shp_mun_rgdal#[shp_mun_rgdal$state_code %in% c(9, 15), ]
-imp_mun_nb <- poly2nb(imp_shp) # neighbor list muns
-imp_mun_centers <- coordinates(imp_shp) # mun centers
-
-
-plot(imp_mun_nb, imp_mun_centers)
-tm_shape(imp_shp) +
-  tm_fill(col = "im_perc_ventdrog")
-
-# moran.test(imp_shp$prop_seguridad,
-#            nb2listw( poly2nb(imp_shp) ))
-
-
-# faltantes
-nas_vec <- is.na(imp_shp$prop_seguridad)
-sum(nas_vec)
-sum(nas_vec)/length(nas_vec)
-
-
-
-# variograma de faltante sy no faltantes
-plot(variogram(prop_seguridad ~ 1, imp_shp[!nas_vec, ]))
-mod_vgm <- variogram(prop_seguridad ~ long + lat, imp_shp[!nas_vec, ])
-plot(mod_vgm)
-
-
-# 4a. autokrige
-mod_autok <- autoKrige(formula = prop_seguridad ~ V1 + V2,
-                     input_data = imp_shp[!nas_vec, ],
-                     new_data  = imp_shp[nas_vec, ],
-                     model = "Mat")
-
-
-# 4b. kriging manual -----
-
-# Eyeball the variogram and estimate the initial parameters
-nugget <- .02
-psill <- .03-.02
-range <- 600
-
-# Fit the variogram
-v_model <- fit.variogram(
-  mod_vgm,
-  model = vgm(
-    model = "Ste",
-    nugget = nugget,
-    psill = psill,
-    range = range,
-    kappa = 0.5
-  )
-)
-
-# Show the fitted variogram on top of the binned variogram
-plot(mod_vgm, model = v_model)
-print(v_model)
-
-# Set the trend formula and the new data
-km <- krige(prop_seguridad ~ long + lat, imp_shp[!nas_vec, ], newdata = imp_shp[nas_vec, ], model = v_model)
-names(km)
-
-# Plot the predicted values
-spplot(km, "var1.pred")
-
-
-
-#
-# # Suavizamiento ----
-# # Make neighbor list
-# borough_nb <- poly2nb(london_ref)
-# borough_centers <- coordinates(london_ref)
-#
-# # Show the connections
-# plot(london_ref); plot(borough_nb, borough_centers, add = T)
-#
-# # Map the total pop'n
-# spplot(london_ref, zcol = "TOTAL_POP")
-#
-# # Run a Moran I test on total pop'n
-# moran.test(
-#   london_ref$TOTAL_POP,
-#   nb2listw(borough_nb)
-# )
-#
-#
-# borough_nb <- poly2nb(london)
-# borough_gra <- nb2gra(borough_nb)
-#
-# # Fit spatial model
-# flu_spatial <- bayesx(
-#   Flu_OBS ~ HealthDeprivation + sx(i, bs = "spatial", map = borough_gra),
-#   offset = log(london$TOTAL_POP),
-#   family = "poisson", data = data.frame(london),
-#   control = bayesx.control(seed = 17610407)
-# )
-#
-# # Summarize the model
-# summary(flu_spatial)
-# summary(flu_spatial)
-#
-# # Map the fitted spatial term only
-# london$spatial <- fitted(flu_spatial, term = "sx(i):mrf")[, "Mean"]
-# spplot(london, zcol = "spatial")
-#
-# # Map the residuals
-# london$spatial_resid <- residuals(flu_spatial)[, "mu"]
-# spplot(london, zcol = "spatial_resid")
-#
-# # Test residuals for spatial correlation
-# moran.mc(london$spatial_resid, nb2listw(borough_nb), 999)
-#
-#
-#
-# library(gstat)
-# miss <- is.na(ca_geo$pH)
-#
-# # Make a variogram of the non-missing data
-# plot(variogram(pH ~ 1, ca_geo[!miss, ]))
-#
-#
-# # The pH depends on the coordinates
-# ph_vgm <- variogram(pH ~ x + y, ca_geo[!miss, ])
-# plot(ph_vgm)
-#
-# # Eyeball the variogram and estimate the initial parameters
-# nugget <- .16
-# psill <- .28-.16
-# range <- 10000
-#
-# # Fit the variogram
-# v_model <- fit.variogram(
-#   ph_vgm,
-#   model = vgm(
-#     model = "Ste",
-#     nugget = nugget,
-#     psill = psill,
-#     range = range,
-#     kappa = 0.5
-#   )
-# )
-#
-# # Show the fitted variogram on top of the binned variogram
-# plot(ph_vgm, model = v_model)
-# print(v_model)
-#
-#
-# # Set the trend formula and the new data
-# km <- krige(pH ~ x + y, ca_geo[!miss, ], newdata = ca_geo[miss, ], model = v_model)
-# names(km)
-#
-# # Plot the predicted values
-# spplot(km, "var1.pred")
-#
-# # Compute the probability of alkaline samples, and map
-# km$pAlkaline <- 1 - pnorm(7, mean = km$var1.pred, sd = sqrt(km$var1.var))
-# spplot(km, "pAlkaline")
-#
-#
-# plot(geo_bounds); points(ca_geo)
-#
-# # Find the corners of the boundary
-# bbox(geo_bounds)
-#
-# # Define a 2.5km square grid over the polygon extent. The first parameter is
-# # the bottom left corner.
-# grid <- GridTopology(c(537853, 5536290), c(2500, 2500), c(72, 48))
-#
-# # Create points with the same coordinate system as the boundary
-# gridpoints <- SpatialPoints(grid, proj4string = CRS(projection(geo_bounds)))
-# plot(gridpoints)
-#
-# # Crop out the points outside the boundary
-# cropped_gridpoints <- crop(gridpoints, geo_bounds)
-# plot(cropped_gridpoints)
-#
-# # Convert to SpatialPixels
-# spgrid <- SpatialPixels(cropped_gridpoints)
-# coordnames(spgrid) <- c("x", "y")
-# plot(spgrid)
-#
-#
-# # Do kriging predictions over the grid
-# ph_grid <- krige(pH ~ x + y, ca_geo[!miss, ], newdata = spgrid, model = v_model)
-#
-# # Calc the probability of pH exceeding 7
-# ph_grid$pAlkaline <- 1 - pnorm(7, mean = ph_grid$var1.pred, sd = sqrt(ph_grid$var1.var))
-#
-# # Map the probability of alkaline samples
-# spplot(ph_grid, zcol = "pAlkaline")
-#
-#
-# # Kriging with linear trend, predicting over the missing points
-# ph_auto <- autoKrige(
-#   pH ~ x + y,
-#   input_data = ca_geo[!miss, ],
-#   new_data = ca_geo[miss, ],
-#   model = "Mat"
-# )
-#
-# # Plot the variogram, predictions, and standard error
-# plot(ph_auto)
-#
-#
-# # Auto-run the kriging
-# ph_auto_grid <- autoKrige(pH ~ x + y, input_data = ca_geo[!miss, ], new_data = spgrid)
-#
-# # Remember predictions from manual kriging
-# plot(ph_grid)
-#
-# # Plot predictions and variogram fit
-# plot(ph_auto_grid)
-#
-# # Compare the variogram model to the earlier one
-# v_model
-# ph_auto_grid$var_model
-
-
-
-
-
-
-# 111. Anterior ----
-  # # 1. Datos ----
-# 
-# # Códigos de entidad y municipio
-# load("cache/tab_cods_estmun.RData")
-# tab_cods_estmun %>% head
-# 
-# # Indicadores del indice municipal
-# load("cache/tab_mun.RData")
-# tab_mun
-# 
-# # Estados (32)  ----
-# # spatial data frame
-# dir("data/mex_edos_shapes")
-# shp_edo_rgdal <-  rgdal::readOGR("data/mex_edos_shapes/Mex_Edos.shp")
-# class(shp_edo_rgdal)
-# 
-# shp_edo_rgdal@data
-# 
-# shp_edo_rgdal$NOM_ENT_ORIG <- shp_edo_rgdal$NOM_ENT
-# shp_edo_rgdal$NOM_ENT <- NULL
-# 
-# tab_edos <- shp_edo_rgdal@data %>%
-#   rownames_to_column('state_code') %>%
-#   mutate(state_code = parse_number(state_code) +1)
-# 
-# 
-# shp_edo_rgdal <- shp_edo_rgdal %>%
-#   merge(shp_edo_rgdal@data %>%
-#           rownames_to_column('state_code') %>%
-#           mutate(state_code = parse_number(state_code) +1),
-#         by = "NOM_ENT_ORIG") %>%
-#   merge(tab_cods_estmun %>%
-#           dplyr::select(NOM_ENT, state_code) %>%
-#           unique())
-# 
-# shp_edo_rgdal@data
-# shp_edo_rgdal$NOM_ENT_ORIG <- NULL
-# 
-# 
-# 
-# 
-# # Municipios (2457) ----
-# # spatial data frame
-# dir("data/mex_muncs_shapes/")
-# shp_mun_rgdal <-  rgdal::readOGR("data/mex_muncs_shapes/merge.shp")
-# shp_mun_rgdal@data %>% head()
-# 
-# # duplicados
-# any(duplicated(shp_mun_rgdal$CVEGEO))
-# shp_mun_rgdal <- shp_mun_rgdal[-1962, ]
-# any(duplicated(shp_mun_rgdal$CVEGEO))
-# 
-# class(shp_mun_rgdal)
-# shp_mun_rgdal$mun_code <- parse_number(shp_mun_rgdal$CVE_MUN)
-# shp_mun_rgdal$state_code <- parse_number(shp_mun_rgdal$CVE_ENT)
-# 
-# # coordenadas
-# tab_coords <- coordinates(shp_mun_rgdal)  %>%
-#   as_data_frame() %>%
-#   mutate(CVEGEO = shp_mun_rgdal$CVEGEO) %>%
-#   rename(long = V1, lat = V2)
-# 
-# # union
-# shp_mun_rgdal <- shp_mun_rgdal %>%
-#   merge(tab_cods_estmun ) %>%
-#   merge(tab_data ) %>%
-#   merge(tab_coords)
-# 
-# shp_mun_rgdal@data %>% head
-# names(shp_mun_rgdal)
-# summary(shp_mun_rgdal)
-
-
-
+tm <- tm_shape(imp_shp_kg) +
+  tm_fill(col = c("im_prob_robescu", 
+                  "imp_im_prob_robescu", 
+                  "kg_imp_im_prob_robescu"),
+          style = "quantile",
+          title = c("Observado", "Imputación", "Interpolación")) 
+save_tmap(tm = tm, filename = "graphs/prb_tmap_kg.png", 
+          width = 15, height = 6)
 
 # Fit spatial model
 flu_spatial <- bayesx(
@@ -768,4 +370,3 @@ flu_spatial <- bayesx(
   control = bayesx.control(seed = 17610407)
 )
 
-# Summarize the model
