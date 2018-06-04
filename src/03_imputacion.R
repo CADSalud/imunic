@@ -9,7 +9,8 @@ library(mi)
 library(bayesplot)
 library(automap)
 library(tmap)
-library(BayesXsrc)
+library(R2BayesX)
+
 
 # Datos ----
 load("cache/tab_cods_estmun.RData")
@@ -248,9 +249,13 @@ class(imp_shp)
 
 imp_mun_nb <- poly2nb(imp_shp) # neighbor list muns
 imp_mun_centers <- coordinates(imp_shp) # mun centers
+imp_mun_gra <- nb2gra(imp_mun_nb)
+
+
 
 # Shape points dataframe
 imp_shp_pts <- SpatialPointsDataFrame(imp_shp, data = imp_shp@data)
+
 
 # variable interpolacion
 names(imp_shp)
@@ -277,7 +282,8 @@ sum(nas_vec)
 sum(nas_vec)/length(nas_vec)
 
 
-# variograma de faltante sy no faltantes
+# Prueba con una variable
+# variograma de faltante sy no faltantes 
 col_name <- 'imp_im_perc_robos'
 mod_vgm <- variogram(as.formula(paste("log(", col_name, ")", 
                                       "~ long + lat")), 
@@ -312,7 +318,7 @@ data_res <- imp_shp_pts@data %>%
 
 
 
-
+# Función para todas las variables 
 # auto krige function by colname 
 vars_imp <- imp_shp_pts@data %>% 
   dplyr::select(starts_with("imp_")) %>% 
@@ -320,12 +326,14 @@ vars_imp <- imp_shp_pts@data %>%
 vars_imp
 
 kg_tbls_mod <- lapply(vars_imp, function(col_name){
+  # col_name <- "imp_im_prob_robos"
   print(col_name)
+  
   mod_autok <- autoKrige(formula = as.formula(paste("log(", col_name, 
                                                     ") ~ long + lat")),
                          input_data = imp_shp_pts[!nas_vec, ],
                          new_data  = imp_shp_pts[nas_vec, ])
-  summary(mod_autok)
+  # summary(mod_autok)
   kg_col_name <- paste0("kg_", col_name)
   
   imp_shp_pts@data[, kg_col_name] <- 
@@ -335,7 +343,16 @@ kg_tbls_mod <- lapply(vars_imp, function(col_name){
   data_res <- imp_shp_pts@data %>% 
     dplyr::select_('state_code', 'mun_code', kg_col_name) %>% 
     as_tibble()
+  
+  # Fit spatial model
+  smooth_spatial <- bayesx(
+    formula = as.formula( paste("log(", kg_col_name, 
+            ") ~ sx( bs = 'spatial', map = imp_mun_gra)")),
+    data = data.frame(data_res), 
+    control = bayesx.control(seed = 17610407))
+  
   data_res
+  
 })
 kg_tbls_mod %>% length()
 vars_imp %>% length()
@@ -358,15 +375,10 @@ tm <- tm_shape(imp_shp_kg) +
                   "imp_im_prob_robescu", 
                   "kg_imp_im_prob_robescu"),
           style = "quantile",
-          title = c("Observado", "Imputación", "Interpolación")) 
+          title = "Percepción")
+          # title = c("Observado", "Imputación", "Interpolación")) 
 save_tmap(tm = tm, filename = "graphs/prb_tmap_kg.png", 
           width = 15, height = 6)
 
-# Fit spatial model
-flu_spatial <- bayesx(
-  Flu_OBS ~ HealthDeprivation + sx(i, bs = "spatial", map = borough_gra),
-  offset = log(london$TOTAL_POP),
-  family = "poisson", data = data.frame(london),
-  control = bayesx.control(seed = 17610407)
-)
+
 
