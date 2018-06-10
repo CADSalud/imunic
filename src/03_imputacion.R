@@ -9,7 +9,7 @@ library(mi)
 library(bayesplot)
 library(automap)
 library(tmap)
-library(R2BayesX)
+
 
 
 # Datos ----
@@ -24,18 +24,19 @@ load("cache/im_shp_mun_rgdal.RData")
 im_shp_mun_rgdal@data %>% head
 
 
-# Imputación multiple
+# Shape data para imputacion
 df_imp <- im_shp_mun_rgdal@data
 df_imp %>% head
 summary(df_imp)
 
+# coordenadas en df del centro del municipio
 tab_coords <- coordinates(im_shp_mun_rgdal)  %>%
   as_data_frame() %>%
   mutate(state_code = im_shp_mun_rgdal$state_code,
          mun_code = im_shp_mun_rgdal$mun_code) %>%
   rename(long = V1, lat = V2)
 
-
+# tabla de variable a imputar
 tab_imp <- tab_mun %>% 
   dplyr::select(starts_with("im_perc"),
                 starts_with("im_prob"),
@@ -57,7 +58,10 @@ tab_imp <- tab_mun %>%
   left_join(tab_coords)
 tab_imp %>% summary()
 
-# 1. Imputacion multiple----
+
+
+# 1. Imputacion multiple ----
+# (no es necesario correr si ya existe cache/tab_imp_res.RData)
 
 # Análisis de faltantes
 df_data <- tab_imp %>% 
@@ -92,13 +96,17 @@ show(mdf_data)
 #               max.minutes = 10)
 show(imps_mi)
 
+# correr hasta convergencia de cadenas
 round(mipply(imps_mi, mean, to.matrix = TRUE), 3)
 Rhats(imps_mi)
 mcmc_rhat(Rhats(imps_mi))
 # imps_mi <- mi(imps_mi, n.iter = 8)
-# cache("imps_mi")
-load("cache/imps_mi.RData")
 
+# guarda el objeto de imputaciones
+# cache("imps_mi")
+# load("cache/imps_mi.RData")
+
+# construye listas de simulaciones
 comp_imps_mi <- mi::complete(imps_mi, m = 4)
 summary(comp_imps_mi)
 str(comp_imps_mi)
@@ -106,6 +114,7 @@ comp_imps_mi[[1]] %>% head
 comp_imps_mi[[3]][1, ]
 # sub <- comp_imps_mi[[1]] 
 
+# resumen de cadenas de simulaciones 
 df_imps <- lapply(comp_imps_mi, function(sub){
     sub %>% 
       select(state_code, mun_code, starts_with("im_")) %>% 
@@ -128,20 +137,25 @@ df_imps <- lapply(comp_imps_mi, function(sub){
 df_imps %>% head()
 df_data %>% head()
 
+# tabla con simulacion
 tab_imp_res <- df_imps %>% 
   left_join(df_data %>% 
               gather(variable, obs, -c(state_code, mun_code, long, lat)) %>% 
               dplyr::select(-long, -lat), 
             by = c("mun_code", "state_code", "variable"))
 tab_imp_res
-
 # cache("tab_imp_res")
-load('cache/tab_imp_res.RData')
 
+
+# 2. Análisis de simulaciones por municipio ----
+# Tabla de simulaciones
+load('cache/tab_imp_res.RData')
 vars_selec <- unique(tab_imp_res$variable)[grep(pattern = "im_prob|im_perc", 
                                                 unique(tab_imp_res$variable))]
 vars_selec
 
+
+# Evaluacion grafica de simualciones
 tab_imp_res %>% 
   filter( variable %in% vars_selec) %>% 
   gather(tipo, valor, c(mean, median, obs)) %>% 
@@ -219,7 +233,9 @@ tab %>%
 
 
 
-# 2. Kriging ----
+# 3. Kriging de varlores faltantes ----
+
+# tabla a imputar
 tab_krige <- tab_imp_res %>% 
   filter( variable %in% vars_selec) %>% 
   dplyr::select(mun_code, state_code, variable, mean) %>% 
@@ -232,57 +248,43 @@ tab_krige <- tab_imp_res %>%
             by = c("mun_code", "state_code"))
 tab_krige
 
-# Mapas 
+# merge de shape y tabla para imputar
 names(tab_krige)
-im_shp_mun_rgdal <- im_shp_mun_rgdal %>% 
+im_shp_mun_rgdal <- im_shp_mun_rgdal %>%
   merge(tab_krige)
 im_shp_mun_rgdal@data %>% head()
 names(im_shp_mun_rgdal)
 
-# Shape polygon dataframe
+# shape a imputar
 imp_shp <- im_shp_mun_rgdal
 names(imp_shp)
+class(imp_shp)
 
 imp_shp@data %>% head()
 imp_shp@data %>% summary()
-class(imp_shp)
 
+
+# caracteristicas
 imp_mun_nb <- poly2nb(imp_shp) # neighbor list muns
-imp_mun_centers <- coordinates(imp_shp) # mun centers
 imp_mun_gra <- nb2gra(imp_mun_nb)
+imp_mun_coo <- coordinates(imp_shp) # mun centers
 
 
-
-# Shape points dataframe
+# Shape poligonos a puntos para kriging
 imp_shp_pts <- SpatialPointsDataFrame(imp_shp, data = imp_shp@data)
 
 
-# variable interpolacion
-names(imp_shp)
+
+
+# 3a. Prueba con una variable ----
+# (no es necesario correr)
 col_name <- 'imp_im_perc_robos'
 
-# mapas
-tm_shape(imp_shp) +
-  tm_fill(col = str_replace(col_name, "imp_", ""),
-          style = "quantile") 
-tm_shape(imp_shp) +
-  tm_fill(col = col_name, 
-          style = "quantile", 
-          title.col = "Robos") + 
-  tm_bubbles(size = col_name, 
-             col = col_name,
-             style = "quantile", 
-             legend.size.show = FALSE, 
-             title.col = "Robos")
-
-
-# faltantes
+# faltantes de la columna
 nas_vec <- is.na(imp_shp@data[, col_name])
 sum(nas_vec)
 sum(nas_vec)/length(nas_vec)
 
-
-# Prueba con una variable
 # variograma de faltante sy no faltantes 
 col_name <- 'imp_im_perc_robos'
 mod_vgm <- variogram(as.formula(paste("log(", col_name, ")", 
@@ -290,11 +292,12 @@ mod_vgm <- variogram(as.formula(paste("log(", col_name, ")",
                      imp_shp_pts[!is.na(imp_shp_pts@data[, col_name]), ])
 plot(mod_vgm)
 head(mod_vgm)
-
 fit_vgm <- fit.variogram(mod_vgm, 
                          model = vgm(psill = .9-.7, model = "Sph",
                                      range = 5.5, nugget = .7))
 plot(mod_vgm, fit_vgm) 
+
+
 
 # auto krige
 mod_autok <- autoKrige(formula = as.formula(paste("log(", col_name, 
@@ -303,82 +306,240 @@ mod_autok <- autoKrige(formula = as.formula(paste("log(", col_name,
                        input_data = imp_shp_pts[!nas_vec, ],
                        new_data  = imp_shp_pts[nas_vec, ])
 summary(mod_autok)
-plot(mod_autok)
+# plot(mod_autok)
 
 mod_autok %>% str
+mod_autok$krige_output %>% str
 mod_autok$krige_output@data %>% head
 
 imp_shp_pts@data %>% head
-kg_col_name <- paste0("kg_", col_name)
+kg_col_name <- str_replace_all(col_name, "imp_", "kg_")
 
 imp_shp_pts@data[, kg_col_name] <- imp_shp_pts@data[, col_name]
 imp_shp_pts@data[nas_vec, kg_col_name] <- exp(mod_autok$krige_output@data$var1.pred)
-data_res <- imp_shp_pts@data %>% 
+head(imp_shp_pts@data)
+
+data_res <- imp_shp_pts@data %>%
   dplyr::select_('state_code', 'mun_code', kg_col_name)
+data_res %>% head
+
+imp_shp_prb <- imp_shp %>% 
+  merge(data_res,
+        by = c("state_code", "mun_code")) 
+imp_shp_prb %>% head
 
 
 
-# Función para todas las variables 
-# auto krige function by colname 
+
+
+
+# 3b. Kriging en todas las variables  ----
+imp_shp_pts <- SpatialPointsDataFrame(imp_shp, data = imp_shp@data)
+
+# variables a imputar
 vars_imp <- imp_shp_pts@data %>% 
   dplyr::select(starts_with("imp_")) %>% 
   names()
 vars_imp
 
+# lapply por cada variable
 kg_tbls_mod <- lapply(vars_imp, function(col_name){
   # col_name <- "imp_im_prob_robos"
   print(col_name)
   
+  # valores faltantes de columna
+  nas_vec <- is.na(imp_shp@data[, col_name])
+  sum(nas_vec)
+  sum(nas_vec)/length(nas_vec)
+
+  # auto krige por colname 
   mod_autok <- autoKrige(formula = as.formula(paste("log(", col_name, 
                                                     ") ~ long + lat")),
                          input_data = imp_shp_pts[!nas_vec, ],
                          new_data  = imp_shp_pts[nas_vec, ])
   # summary(mod_autok)
-  kg_col_name <- paste0("kg_", col_name)
   
+  # nombre de variable
+  kg_col_name <- str_replace_all(col_name, "imp_", "kg_")
+  
+  # reemplazar nas
   imp_shp_pts@data[, kg_col_name] <- 
     imp_shp_pts@data[, col_name]
   imp_shp_pts@data[nas_vec, kg_col_name] <- 
     exp(mod_autok$krige_output@data$var1.pred)
+  
+  # dataframe final
   data_res <- imp_shp_pts@data %>% 
     dplyr::select_('state_code', 'mun_code', kg_col_name) %>% 
     as_tibble()
   
-  # Fit spatial model
-  smooth_spatial <- bayesx(
-    formula = as.formula( paste("log(", kg_col_name, 
-            ") ~ sx( bs = 'spatial', map = imp_mun_gra)")),
-    data = data.frame(data_res), 
-    control = bayesx.control(seed = 17610407))
-  
-  data_res
-  
+  return(data_res)
 })
 kg_tbls_mod %>% length()
 vars_imp %>% length()
 
+# merge de datos de imputados
 imp_shp_kg <- imp_shp %>% 
   merge(kg_tbls_mod %>% 
           reduce(.f = left_join,
                  by = c("state_code", "mun_code")) ) 
 imp_shp_kg %>% head
+
 # cache("imp_shp_kg")
 load("cache/imp_shp_kg.RData")
 
 
+
+
+
+# 4. Smoothing ----
+
+# Varias pruebas una variable
+kg_col_name <- 'kg_im_perc_robos'
+
+# Krige (points)
+imp_shp_pts@data %>% head()
+proj4string(imp_shp_pts)
+coordinates(imp_shp_pts)
+
+imp_shp_pts_fit <- imp_shp_pts
+imp_shp_pts_fit$kg_im_perc_robos <- NULL
+imp_shp_pts_fit@data %>% head()
+
+
+mod_autok <- autoKrige(formula = as.formula(paste("log(", kg_col_name, 
+                                                  ") ~ long + lat")),
+                       input_data = imp_shp_pts,
+                       new_data = imp_shp_pts_fit)
+mod_autok$krige_output %>% head()
+mod_autok$krige_output %>% dim()
+
+df_akg <- imp_shp_pts@data %>% 
+  dplyr::select(state_code, mun_code) 
+df_akg[, "fit_kg"] <- mod_autok$krige_output$var1.pred %>% exp
+
+head(df_akg)
+class(imp_shp_prb)
+
+imp_shp_prb <- imp_shp_prb %>% 
+  merge(df_akg)
+imp_shp_prb@data %>% head
+qplot(imp_shp_prb@data$kg_im_perc_robos, imp_shp_prb@data$fit_kg)
+
+tm_shape(imp_shp_prb) +
+  tm_fill(col = 'fit_kg',
+          style = "quantile")
+
+var_vgm <- variogram(as.formula(paste("log(", kg_col_name, 
+                                      ") ~ long + lat")), 
+                     locations = imp_shp_pts)
+var_fit <- fit.variogram(var_vgm, model=  vgm("Sph") ) # fit model
+plot(var_vgm, var_fit)
+var_krg <- krige(formula =formu,
+                 data = data.frame(imp_shp_pts),
+                 locations = imp_shp_pts,
+                 model = var_fit)
+
+
+
+# knn: Nearest Neighbours
+ids_mun <- row.names(as(imp_shp_prb, "data.frame"))
+imp_mun_coo <- coordinates(imp_shp_prb) 
+
+knn50 <- knn2nb(knearneigh(imp_mun_coo, k = 4), row.names = ids_mun)
+knn50 <- include.self(knn50)
+# Creating the localG statistic for each of counties, 
+localGvalues <- localG(x = as.numeric( (imp_shp_prb$kg_im_perc_robos)), 
+                       listw = nb2listw(knn50, style = "S"),
+                       zero.policy = TRUE)
+str(localGvalues)
+
+qplot(as.numeric(localGvalues), log(imp_shp_prb$kg_im_perc_robos)) + 
+  geom_abline(slope = 1, intercept = 0) 
+
+class(imp_shp_prb)
+imp_shp_prb$smo_im_perc_robos <- exp(localGvalues)
+imp_shp_prb@data %>% head()
+imp_shp_prb$smo_im_perc_robos %>% summary()
+
+tm_shape(imp_shp_prb) +
+  tm_fill(col = 'smo_im_perc_robos',
+          style = "quantile")
+
+imp_shp_prb@data %>% 
+  filter(smo_im_perc_robos > 10) %>% 
+  dplyr::select(state_code, mun_code, NOMGEO, 
+                kg_im_perc_robos, smo_im_perc_robos)
+
+
+
+
+# bayesx: markov random field
+imp_mun_nb_prb <- poly2nb(imp_shp_prb) # neighbor list muns
+imp_mun_gra_prb <- nb2gra(imp_mun_nb_prb) # mun centers
+
+sm_col_name <- "smo_im_perc_robos"
+df_shp <- data.frame(imp_shp_prb) %>% 
+  dplyr::select_("state_code", "mun_code", "lat", "long", 
+                 kg_col_name)
+
+formu <- as.formula(paste("log(kg_im_perc_robos)~ long + lat ", 
+                          "+ sx(state_code, bs = 'spatial', map = imp_mun_gra_prb)",
+                          "+ sx(mun_code, bs = 'spatial', map = imp_mun_gra_prb)"))
+mod_spatial <- bayesx(formula = formu,
+                      family = "gaussian", 
+                      data = df_shp, 
+                      control = bayesx.control(seed = 17610407)) 
+summary(mod_spatial)
+
+mod_spatial$fitted.values %>% head()
+qplot(mod_spatial$fitted.values[, 1], df_shp$kg_im_perc_robos)
+
+df_shp[, 'fit'] <- exp(mod_spatial$fitted.values[, 1])
+df_shp %>% head()
+
+qplot(df_shp$kg_im_perc_robos, df_shp$fit)
+imp_shp_prb <- imp_shp_prb %>% 
+  merge(df_shp)
+
+imp_shp_prb %>% class()
+imp_shp_prb@data %>% head()
+
+tm_shape(imp_shp_prb) +
+  tm_fill(col = 'fit',
+          style = "quantile")
+
+
+
+# mapas de una variable de interpolacion
+tm_shape(imp_shp_prb) +
+  tm_fill(col = kg_col_name,
+          style = "quantile")
+
+tm_shape(imp_shp_prb) +
+  tm_fill(col = col_name,
+          style = "quantile")
+
+
+
+
+
+
+
+
+
+# 5. Evaluación gráfica ----
 tm_shape(imp_shp_kg) +
-  tm_fill(col = "kg_imp_im_prob_robescu", 
+  tm_fill(col = "kg_im_prob_robescu", 
           style = "quantile")
 
 tm <- tm_shape(imp_shp_kg) +
   tm_fill(col = c("im_prob_robescu", 
                   "imp_im_prob_robescu", 
-                  "kg_imp_im_prob_robescu"),
+                  "kg_im_prob_robescu"),
           style = "quantile",
           title = "Percepción")
-          # title = c("Observado", "Imputación", "Interpolación")) 
+          title = c("Observado", "Imputación", "Interpolación"))
 save_tmap(tm = tm, filename = "graphs/prb_tmap_kg.png", 
           width = 15, height = 6)
-
-
 
