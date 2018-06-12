@@ -9,7 +9,7 @@ library(mi)
 library(bayesplot)
 library(automap)
 library(tmap)
-
+library(R2BayesX)
 
 
 # Datos ----
@@ -480,12 +480,19 @@ imp_mun_gra_prb <- nb2gra(imp_mun_nb_prb) # mun centers
 
 sm_col_name <- "smo_im_perc_robos"
 df_shp <- data.frame(imp_shp_prb) %>% 
+  rownames_to_column('ids') %>% 
+  mutate(ids = parse_number(ids)) %>% 
   dplyr::select_("state_code", "mun_code", "lat", "long", 
-                 kg_col_name)
+                 "ids", kg_col_name)
 
-formu <- as.formula(paste("log(kg_im_perc_robos)~ long + lat ", 
+df_shp$ids %>% summary()
+df_shp$ids %>% n_distinct()
+
+formu <- as.formula(paste("log(kg_im_perc_robos)~ 1 +", 
+                          "+ sx(long) + sx(lat)",
                           "+ sx(state_code, bs = 'spatial', map = imp_mun_gra_prb)",
                           "+ sx(mun_code, bs = 'spatial', map = imp_mun_gra_prb)"))
+formu
 mod_spatial <- bayesx(formula = formu,
                       family = "gaussian", 
                       data = df_shp, 
@@ -495,10 +502,45 @@ summary(mod_spatial)
 mod_spatial$fitted.values %>% head()
 qplot(mod_spatial$fitted.values[, 1], df_shp$kg_im_perc_robos)
 
-df_shp[, 'fit'] <- exp(mod_spatial$fitted.values[, 1])
+df_shp[, 'fit_mod'] <- exp(mod_spatial$fitted.values[, 1])
+df_shp %>% head()
+df_shp %>% dim()
+
+imp_shp_tmap <- imp_shp_prb %>% 
+  merge(df_shp)
+
+imp_shp_tmap %>% class()
+imp_shp_tmap@data %>% head()
+
+tm_shape(imp_shp_tmap) +
+  tm_fill(col = 'fit_mod',
+          style = "quantile")
+
+
+
+
+
+# linear regression
+imp_mun_nb_prb <- poly2nb(imp_shp_prb) # neighbor list muns
+imp_mun_gra_prb <- nb2gra(imp_mun_nb_prb) # mun centers
+
+sm_col_name <- "smo_im_perc_robos"
+df_shp <- data.frame(imp_shp_prb) %>% 
+  dplyr::select_("state_code", "mun_code", "lat", "long", 
+                 kg_col_name)
+head(df_shp)
+
+formu <- as.formula(paste("log(", kg_col_name,
+                          ")~ long + lat + (1|state_code)"))
+mod_lmer <- lm(formula = log(kg_im_perc_robos) ~ long + lat ,
+                 data = df_shp) 
+summary(mod_lmer)
+
+qplot(exp(fitted(mod_lmer)), df_shp$kg_im_perc_robos)
+
+df_shp[, 'fit'] <- exp(fitted(mod_lmer))
 df_shp %>% head()
 
-qplot(df_shp$kg_im_perc_robos, df_shp$fit)
 imp_shp_prb <- imp_shp_prb %>% 
   merge(df_shp)
 
@@ -508,6 +550,7 @@ imp_shp_prb@data %>% head()
 tm_shape(imp_shp_prb) +
   tm_fill(col = 'fit',
           style = "quantile")
+
 
 
 
