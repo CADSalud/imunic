@@ -609,23 +609,6 @@ load("cache/imp_shp_smo.RData")
 
 
 
-# Creating the localG statistic for each of counties, 
-localGvalues <- localG(x = as.numeric( (imp_shp_prb[, col_name])), 
-                       listw = nb2listw(knn50, style = "S"),
-                       zero.policy = TRUE)
-str(localGvalues)
-
-qplot(as.numeric(localGvalues), log(imp_shp_prb$kg_im_perc_robos)) + 
-  geom_abline(slope = 1, intercept = 0) 
-
-class(imp_shp_prb)
-imp_shp_prb$smo_im_perc_robos <- exp(localGvalues)
-
-
-
-
-
-
 
 # mapas de una variable de interpolacion
 tm_shape(imp_shp_prb) +
