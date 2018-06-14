@@ -41,7 +41,8 @@ tab_imp <- tab_mun %>%
   dplyr::select(starts_with("im_perc"),
                 starts_with("im_prob"),
                 starts_with("im_intrc"),
-                starts_with("im_secr"),
+                starts_with("im_vict"),
+                # starts_with("im_secre"),
                 state_code = ENT, 
                 mun_code = MUN, 
                 -im_intrc_pol_habs, 
@@ -79,15 +80,22 @@ summary(mdf_data)
 image(mdf_data)
 hist(mdf_data)
 
+
+mdf_data <- change(mdf_data,
+                   y = "im_vict_secuest",
+                   what = "family",
+                   to = "gaussian")
+
 mdf_data <- change(mdf_data,
               y = c("im_perc_robos", "im_perc_pandill", "im_perc_secuest",
                     "im_perc_homicid", "im_perc_prostit", "im_perc_pirater",
                     "im_perc_disparo", "im_perc_extors", "im_perc_invaspr",
                     "im_perc_pocciud", "im_perc_ventdrog", 
                     "im_prob_robos", "im_prob_delinc", "im_prob_alumbr", 
-                    "im_prob_pandill", "im_prob_robesc"),
+                    "im_prob_pandill", "im_prob_robesc", 
+                    "im_vict_robo", "im_vict_agrfis", "im_vict_secuest"),
               what = "transformation",
-              to = rep("logshift", 16) ) # no negativas
+              to = rep("logshift", 19) ) # no negativas
 show(mdf_data)
 
 # imps_mi <- mi(mdf_data,
@@ -150,8 +158,9 @@ tab_imp_res
 # 2. Análisis de simulaciones por municipio ----
 # Tabla de simulaciones
 load('cache/tab_imp_res.RData')
-vars_selec <- unique(tab_imp_res$variable)[grep(pattern = "im_prob|im_perc", 
-                                                unique(tab_imp_res$variable))]
+vars_selec <- c("im_vict_agrfis","im_vict_secuest", "im_vict_robo",
+                unique(tab_imp_res$variable)[grep(pattern = "im_prob|im_perc", 
+                                                unique(tab_imp_res$variable))])
 vars_selec
 
 
@@ -618,7 +627,8 @@ load("cache/imp_shp_smo.RData")
 # 5. Evaluación gráfica ----
 
 names(imp_shp_kg)
-col_name <- 'kg_im_perc_secuest'
+col_name <- 'kg_im_perc_robos'
+# col_name <- 'kg_im_vict_robo'
 
 tm_shape(imp_shp_kg) +
   tm_fill(col = col_name, 
@@ -629,6 +639,41 @@ tm_shape(imp_shp_smo) +
           style = "quantile")
 
 
+# Scatter plot
+df_smo <- imp_shp_smo@data %>% 
+  as_tibble()
+
+
+
+c(gsub("kg_", "", vars_selec_kg), 
+  gsub("kg_", "smo_", vars_selec_kg))
+
+tab <- df_smo %>% 
+  dplyr::select(state_code, mun_code, 
+                starts_with("im_"),
+                starts_with("smo_")) %>% 
+  gather(var, val, -c(state_code, mun_code)) %>% 
+  filter(var %in% c(gsub("kg_", "", vars_selec_kg), 
+                    gsub("kg_", "smo_", vars_selec_kg))) %>% 
+  mutate(tipo = str_detect(var, "smo_"),
+         var = gsub("im_|smo_", "", var)) %>% 
+  spread(tipo, val)
+
+tab %>% 
+  ggplot(aes(x = `FALSE`, y = `TRUE`)) + 
+  geom_point()+ 
+  facet_wrap(~var, scales = "free") + 
+  geom_text(aes(label = state_code), check_overlap = T)
+
+tab_cods_estmun %>% 
+  dplyr::select(state_code, NOM_ENT) %>% 
+  unique %>% 
+  arrange(state_code) %>% 
+  print(n = Inf)
+
+
+
+# Algunas graficas
 tm <- tm_shape(imp_shp_kg) +
   tm_fill(col = c("im_prob_robescu", 
                   "imp_im_prob_robescu", 
