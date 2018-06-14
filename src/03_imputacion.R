@@ -559,12 +559,19 @@ tm_shape(imp_shp_prb) +
 
 
 
+
+
+
+
+
+
+
+
 # 4b smoothing completa ----
 
 load("cache/imp_shp_kg.RData")
 # polygons
 class(imp_shp_kg)
-
 
 ids_mun <- row.names(as(imp_shp_kg, "data.frame"))
 imp_mun_coo <- coordinates(imp_shp_kg) 
@@ -608,36 +615,29 @@ load("cache/imp_shp_smo.RData")
 
 
 
-
-
-# mapas de una variable de interpolacion
-tm_shape(imp_shp_prb) +
-  tm_fill(col = kg_col_name,
-          style = "quantile")
-
-tm_shape(imp_shp_prb) +
-  tm_fill(col = col_name,
-          style = "quantile")
-
-
-
-
-
-
-
-
-
 # 5. Evaluación gráfica ----
+
+names(imp_shp_kg)
+col_name <- 'kg_im_perc_robos'
+
 tm_shape(imp_shp_kg) +
-  tm_fill(col = "kg_im_prob_robescu", 
+  tm_fill(col = "kg_im_perc_robos", 
           style = "quantile")
+
+
+tm_shape(imp_shp_smo) +
+  tm_fill(col = gsub("kg_", "smo_", col_name),
+          style = "quantile")
+
+
+
 
 tm <- tm_shape(imp_shp_kg) +
   tm_fill(col = c("im_prob_robescu", 
                   "imp_im_prob_robescu", 
-                  "kg_im_prob_robescu"),
+                  "kg_im_prob_robescu",
+                  "smo_im_prob_robescu"),
           style = "quantile",
-          title = "Percepción")
           title = c("Observado", "Imputación", "Interpolación"))
 save_tmap(tm = tm, filename = "graphs/prb_tmap_kg.png", 
           width = 15, height = 6)
