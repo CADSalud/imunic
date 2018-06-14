@@ -586,9 +586,9 @@ vars_selec_kg
 
 smo_tbls_mod <- lapply(vars_selec_kg, function(col_name){
   # col_name <- 'kg_im_perc_robos'
-  var_vec <- as.numeric(imp_shp_kg[,'kg_im_perc_robos']@data[, 1])
+  var_vec <- as.numeric(imp_shp_kg[, col_name]@data[, 1])
   
-  localGvalues <- localG(x = var_vec, 
+  localgmod <- localG(x = var_vec, 
                          listw = nb2listw(knn_mod, style = "S"),
                          zero.policy = TRUE)
   
@@ -596,7 +596,7 @@ smo_tbls_mod <- lapply(vars_selec_kg, function(col_name){
   data_res <- imp_shp_kg@data %>% 
     dplyr::select_('state_code', 'mun_code') %>% 
     as_tibble()
-  data_res[, str_replace(col_name, "kg_", "smo_")] <- exp(localGvalues)
+  data_res[, str_replace(col_name, "kg_", "smo_")] <- exp(localgmod)
   
   return(data_res)
 })
@@ -610,18 +610,18 @@ imp_shp_smo <- imp_shp_kg %>%
                  by = c("state_code", "mun_code")) ) 
 imp_shp_smo %>% head
 
+
 # cache("imp_shp_smo")
 load("cache/imp_shp_smo.RData")
-
 
 
 # 5. Evaluación gráfica ----
 
 names(imp_shp_kg)
-col_name <- 'kg_im_perc_robos'
+col_name <- 'kg_im_perc_secuest'
 
 tm_shape(imp_shp_kg) +
-  tm_fill(col = "kg_im_perc_robos", 
+  tm_fill(col = col_name, 
           style = "quantile")
 
 
