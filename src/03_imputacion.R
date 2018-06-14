@@ -156,6 +156,7 @@ vars_selec
 
 
 # Evaluacion grafica de simualciones
+# (no necesario)
 tab_imp_res %>% 
   filter( variable %in% vars_selec) %>% 
   gather(tipo, valor, c(mean, median, obs)) %>% 
@@ -234,6 +235,11 @@ tab %>%
 
 
 # 3. Kriging de varlores faltantes ----
+load('cache/tab_imp_res.RData')
+vars_selec <- unique(tab_imp_res$variable)[grep(pattern = "im_prob|im_perc", 
+                                                unique(tab_imp_res$variable))]
+vars_selec
+
 
 # tabla a imputar
 tab_krige <- tab_imp_res %>% 
@@ -268,7 +274,6 @@ imp_shp@data %>% summary()
 imp_mun_nb <- poly2nb(imp_shp) # neighbor list muns
 imp_mun_gra <- nb2gra(imp_mun_nb)
 imp_mun_coo <- coordinates(imp_shp) # mun centers
-
 
 # Shape poligonos a puntos para kriging
 imp_shp_pts <- SpatialPointsDataFrame(imp_shp, data = imp_shp@data)
@@ -394,7 +399,8 @@ load("cache/imp_shp_kg.RData")
 
 # 4. Smoothing ----
 
-# Varias pruebas una variable
+# 4a. Varias pruebas una variable ----
+#(no es necesario correr esto)
 kg_col_name <- 'kg_im_perc_robos'
 
 # Krige (points)
@@ -550,6 +556,73 @@ imp_shp_prb@data %>% head()
 tm_shape(imp_shp_prb) +
   tm_fill(col = 'fit',
           style = "quantile")
+
+
+
+# 4b smoothing completa ----
+
+load("cache/imp_shp_kg.RData")
+# polygons
+class(imp_shp_kg)
+
+
+ids_mun <- row.names(as(imp_shp_kg, "data.frame"))
+imp_mun_coo <- coordinates(imp_shp_kg) 
+
+knn_mod <- knn2nb(knearneigh(imp_mun_coo, k = 4), row.names = ids_mun)
+knn_mod <- include.self(knn_mod)
+
+
+vars_selec_kg <- names(imp_shp_kg@data)[str_detect(names(imp_shp_kg@data), 
+                                                   "kg_")]
+vars_selec_kg
+
+smo_tbls_mod <- lapply(vars_selec_kg, function(col_name){
+  # col_name <- 'kg_im_perc_robos'
+  var_vec <- as.numeric(imp_shp_kg[,'kg_im_perc_robos']@data[, 1])
+  
+  localGvalues <- localG(x = var_vec, 
+                         listw = nb2listw(knn_mod, style = "S"),
+                         zero.policy = TRUE)
+  
+  # dataframe final
+  data_res <- imp_shp_kg@data %>% 
+    dplyr::select_('state_code', 'mun_code') %>% 
+    as_tibble()
+  data_res[, str_replace(col_name, "kg_", "smo_")] <- exp(localGvalues)
+  
+  return(data_res)
+})
+smo_tbls_mod %>% length()
+vars_selec_kg %>% length()
+
+# merge de datos de imputados
+imp_shp_smo <- imp_shp_kg %>% 
+  merge(smo_tbls_mod %>% 
+          reduce(.f = left_join,
+                 by = c("state_code", "mun_code")) ) 
+imp_shp_smo %>% head
+
+# cache("imp_shp_smo")
+load("cache/imp_shp_smo.RData")
+
+
+
+
+# Creating the localG statistic for each of counties, 
+localGvalues <- localG(x = as.numeric( (imp_shp_prb[, col_name])), 
+                       listw = nb2listw(knn50, style = "S"),
+                       zero.policy = TRUE)
+str(localGvalues)
+
+qplot(as.numeric(localGvalues), log(imp_shp_prb$kg_im_perc_robos)) + 
+  geom_abline(slope = 1, intercept = 0) 
+
+class(imp_shp_prb)
+imp_shp_prb$smo_im_perc_robos <- exp(localGvalues)
+
+
+
 
 
 
