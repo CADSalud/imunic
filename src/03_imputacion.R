@@ -576,7 +576,7 @@ class(imp_shp_kg)
 ids_mun <- row.names(as(imp_shp_kg, "data.frame"))
 imp_mun_coo <- coordinates(imp_shp_kg) 
 
-knn_mod <- knn2nb(knearneigh(imp_mun_coo, k = 4), row.names = ids_mun)
+knn_mod <- knn2nb(knearneigh(imp_mun_coo, k = 10), row.names = ids_mun)
 knn_mod <- include.self(knn_mod)
 
 
@@ -624,12 +624,9 @@ tm_shape(imp_shp_kg) +
   tm_fill(col = col_name, 
           style = "quantile")
 
-
 tm_shape(imp_shp_smo) +
   tm_fill(col = gsub("kg_", "smo_", col_name),
           style = "quantile")
-
-
 
 
 tm <- tm_shape(imp_shp_kg) +
