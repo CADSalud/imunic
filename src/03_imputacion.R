@@ -674,6 +674,7 @@ tab_cods_estmun %>%
 
 
 # Algunas graficas
+
 tm <- tm_shape(imp_shp_kg) +
   tm_fill(col = c("im_prob_robescu", 
                   "imp_im_prob_robescu", 
